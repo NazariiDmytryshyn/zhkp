@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../api/zhkpApi.js';
+import RichEditor from '../components/RichEditor.jsx';
+import { io } from 'socket.io-client';
 
 /* ─── Icons ─────────────────────────────────────────────── */
 const Icon = {
@@ -20,6 +22,8 @@ const Icon = {
   users:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   img_off:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   edit:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  briefcase:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  bell:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -63,6 +67,18 @@ function Admin() {
   const [news, setNews]               = useState([]);
   const [gallery, setGallery]         = useState([]);
   const [admins, setAdmins]           = useState([]);
+  const [services, setServices]       = useState([]);
+  const [serviceReqs, setServiceReqs] = useState([]);
+
+  /* services ui */
+  const [serviceTab, setServiceTab]       = useState('catalog');
+  const [showServiceForm, setShowSvcF]    = useState(false);
+  const [svcForm, setSvcForm]             = useState({ title: '', description: '', price: '', image: '', features: '' });
+  const [editSvcId, setEditSvcId]         = useState(null);
+  const [editSvcForm, setEditSvcForm]     = useState({});
+  const [srFilter, setSrFilter]           = useState('all');
+  const [editingSrNote, setEditSrNote]    = useState(null);
+  const [srNoteValue, setSrNoteValue]     = useState('');
 
   /* forms */
   const [newsForm, setNewsForm]         = useState({ title: '', summary: '', image: '' });
@@ -78,7 +94,7 @@ function Admin() {
   const [newAdmin, setNewAdmin]         = useState({ username: '', password: '', role: 'worker' });
 
   /* ui */
-  const [toast, setToast]             = useState(null);
+  const [toasts, setToasts]           = useState([]);
   const [reqFilter, setReqFilter]     = useState('all');
   const [showNewsForm, setShowNews]   = useState(false);
   const [showPhotoForm, setShowPhoto] = useState(false);
@@ -87,10 +103,13 @@ function Admin() {
   const [editingNote, setEditingNote] = useState(null);
   const [noteValue, setNoteValue]     = useState('');
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3200);
-  };
+  const socketRef = useRef(null);
+
+  const showToast = useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
 
   /* ── load profile on mount if token exists ── */
   useEffect(() => {
@@ -106,20 +125,43 @@ function Admin() {
     })();
   }, [token]);
 
+  /* ── socket: real-time notifications ── */
+  useEffect(() => {
+    if (!user) return;
+    const socket = io();
+    socketRef.current = socket;
+
+    socket.on('new-request', (req) => {
+      setRequests(prev => prev.some(r => r.id === req.id) ? prev : [req, ...prev]);
+      setStats(prev => prev ? { ...prev, totalRequests: prev.totalRequests + 1, newRequests: prev.newRequests + 1 } : prev);
+      showToast(`Нова заявка: ${req.name} (${req.address})`, 'socket');
+    });
+
+    socket.on('new-service-request', (sr) => {
+      setServiceReqs(prev => prev.some(r => r.id === sr.id) ? prev : [sr, ...prev]);
+      showToast(`Нова заявка на послугу «${sr.serviceName}»`, 'socket');
+    });
+
+    return () => socket.disconnect();
+  }, [user, showToast]);
+
   /* ── load data once user is set ── */
   const refreshData = useCallback(async () => {
     if (!user || !token) return;
     try {
-      const [requestsData, siteData, statsData] = await Promise.all([
+      const [requestsData, siteData, statsData, srData] = await Promise.all([
         api.getAdminRequests(token),
         api.getSite(),
         api.getStats(token),
+        api.getServiceRequests(token),
       ]);
       setRequests(requestsData);
       setNews(siteData.news || []);
       setGallery(siteData.gallery || []);
+      setServices(siteData.services || []);
       setLogoPreview(siteData.logo || '');
       setStats(statsData);
+      setServiceReqs(srData || []);
       if (user.role === 'superadmin') {
         const adminList = await api.getAdmins(token);
         setAdmins(adminList);
@@ -164,6 +206,56 @@ function Admin() {
       setEditingNote(null);
       showToast('Нотатку збережено');
     } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  /* ── service handlers ── */
+  const handleAddService = async (e) => {
+    e.preventDefault();
+    try {
+      const features = svcForm.features.split('\n').map(f => f.trim()).filter(Boolean);
+      await api.addService({ ...svcForm, features }, token);
+      setSvcForm({ title: '', description: '', price: '', image: '', features: '' });
+      setShowSvcF(false);
+      await refreshData();
+      showToast('Послугу додано');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleUpdateService = async (e, id) => {
+    e.preventDefault();
+    try {
+      const features = editSvcForm.features.split('\n').map(f => f.trim()).filter(Boolean);
+      await api.updateService(id, { ...editSvcForm, features }, token);
+      setEditSvcId(null);
+      await refreshData();
+      showToast('Послугу оновлено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleDeleteService = async (id) => {
+    if (!window.confirm('Видалити цю послугу?')) return;
+    try {
+      await api.deleteService(id, token);
+      await refreshData();
+      showToast('Послугу видалено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleSrStatus = async (id, status) => {
+    try {
+      await api.updateServiceRequestStatus(id, status, token);
+      await refreshData();
+      showToast('Статус оновлено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleSaveSrNote = async (id) => {
+    try {
+      await api.updateServiceRequestNote(id, srNoteValue, token);
+      await refreshData();
+      setEditSrNote(null);
+      showToast('Нотатку збережено');
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleStatusChange = async (id, status) => {
@@ -306,10 +398,11 @@ function Admin() {
   const navItems = user.role === 'worker'
     ? [{ id: 'requests', label: 'Заявки', icon: Icon.list }]
     : [
-        { id: 'dashboard', label: 'Огляд',   icon: Icon.grid },
-        { id: 'requests',  label: 'Заявки',  icon: Icon.list },
-        { id: 'news',      label: 'Новини',  icon: Icon.news  },
-        { id: 'gallery',   label: 'Галерея', icon: Icon.image },
+        { id: 'dashboard', label: 'Огляд',    icon: Icon.grid },
+        { id: 'requests',  label: 'Заявки',   icon: Icon.list },
+        { id: 'services',  label: 'Послуги',  icon: Icon.briefcase },
+        { id: 'news',      label: 'Новини',   icon: Icon.news  },
+        { id: 'gallery',   label: 'Галерея',  icon: Icon.image },
         ...(user.role === 'superadmin' ? [{ id: 'settings', label: 'Налаштування', icon: Icon.settings }] : []),
       ];
 
@@ -637,6 +730,219 @@ function Admin() {
     </div>
   );
 
+  /* ════════════════ SERVICES ════════════════ */
+  const filteredSr = srFilter === 'all' ? serviceReqs : serviceReqs.filter(r => r.status === srFilter);
+
+  const renderServices = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+
+      {/* Sub-tabs */}
+      <div className="filter-tabs">
+        <button className={`filter-tab ${serviceTab === 'catalog' ? 'active' : ''}`} onClick={() => setServiceTab('catalog')}>
+          Каталог послуг ({services.length})
+        </button>
+        <button className={`filter-tab ${serviceTab === 'requests' ? 'active' : ''}`} onClick={() => setServiceTab('requests')}>
+          Заявки ({serviceReqs.length})
+          {serviceReqs.filter(r => r.status === 'Нова').length > 0 && (
+            <span style={{ marginLeft: '0.35rem', opacity: 0.7 }}>
+              ({serviceReqs.filter(r => r.status === 'Нова').length} нових)
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ── CATALOG ── */}
+      {serviceTab === 'catalog' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3>Список послуг</h3>
+            {user.role === 'superadmin' && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowSvcF(p => !p)}>
+                {Icon.plus} Додати послугу
+              </button>
+            )}
+          </div>
+
+          {showServiceForm && user.role === 'superadmin' && (
+            <form className="admin-add-form" onSubmit={handleAddService}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Назва *</label>
+                  <input className="form-input" value={svcForm.title} onChange={e => setSvcForm({ ...svcForm, title: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Ціна</label>
+                  <input className="form-input" value={svcForm.price} onChange={e => setSvcForm({ ...svcForm, price: e.target.value })} placeholder="від 500 грн/год" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Опис *</label>
+                <RichEditor key="add-svc" value={svcForm.description} onChange={html => setSvcForm(p => ({ ...p, description: html }))} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">URL зображення</label>
+                <input className="form-input" value={svcForm.image} onChange={e => setSvcForm({ ...svcForm, image: e.target.value })} placeholder="https://..." />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Переваги (кожна з нового рядка)</label>
+                <textarea className="form-textarea" style={{ minHeight: '90px' }} value={svcForm.features} onChange={e => setSvcForm({ ...svcForm, features: e.target.value })} placeholder={"Висота до 18 м\nОператор у вартості\nВиїзд по місту"} />
+              </div>
+              <div style={{ display: 'flex', gap: '0.625rem' }}>
+                <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowSvcF(false)}>Скасувати</button>
+              </div>
+            </form>
+          )}
+
+          {services.length === 0 ? (
+            <div className="empty-state">{Icon.briefcase}<p>Послуг ще немає</p></div>
+          ) : (
+            <div className="service-admin-list">
+              {services.map(s => (
+                <div key={s.id}>
+                  {editSvcId === s.id ? (
+                    <form className="admin-add-form" style={{ borderTop: '1px solid var(--slate-100)', padding: '1.25rem 1.5rem' }} onSubmit={e => handleUpdateService(e, s.id)}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                        <div className="form-group">
+                          <label className="form-label">Назва *</label>
+                          <input className="form-input" value={editSvcForm.title} onChange={e => setEditSvcForm({ ...editSvcForm, title: e.target.value })} required />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Ціна</label>
+                          <input className="form-input" value={editSvcForm.price} onChange={e => setEditSvcForm({ ...editSvcForm, price: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Опис *</label>
+                        <RichEditor key={`edit-${s.id}`} value={editSvcForm.description} onChange={html => setEditSvcForm(p => ({ ...p, description: html }))} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">URL зображення</label>
+                        <input className="form-input" value={editSvcForm.image} onChange={e => setEditSvcForm({ ...editSvcForm, image: e.target.value })} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Переваги (кожна з нового рядка)</label>
+                        <textarea className="form-textarea" style={{ minHeight: '90px' }} value={editSvcForm.features} onChange={e => setEditSvcForm({ ...editSvcForm, features: e.target.value })} />
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.625rem' }}>
+                        <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                        <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditSvcId(null)}>Скасувати</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="service-admin-item">
+                      {s.image
+                        ? <img className="service-admin-thumb" src={s.image} alt={s.title} />
+                        : <div className="service-admin-thumb" style={{ background: 'var(--blue-100)' }} />
+                      }
+                      <div className="service-admin-info">
+                        <div className="service-admin-title">{s.title}</div>
+                        <div className="service-admin-price">{s.price || '—'}</div>
+                      </div>
+                      {user.role === 'superadmin' && (
+                        <div style={{ display: 'flex', gap: '0.375rem' }}>
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditSvcId(s.id); setEditSvcForm({ ...s, features: s.features?.join('\n') || '' }); }} title="Редагувати">
+                            {Icon.edit}
+                          </button>
+                          <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteService(s.id)} title="Видалити">
+                            {Icon.trash}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SERVICE REQUESTS ── */}
+      {serviceTab === 'requests' && (
+        <div style={{ display: 'grid', gap: '1.25rem' }}>
+          <div className="filter-tabs">
+            {Object.entries(STATUS_LABELS).map(([key, label]) => (
+              <button key={key} className={`filter-tab ${srFilter === key ? 'active' : ''}`} onClick={() => setSrFilter(key)}>
+                {label}
+                {key !== 'all' && (
+                  <span style={{ marginLeft: '0.35rem', opacity: 0.7 }}>
+                    ({serviceReqs.filter(r => r.status === key).length})
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-header">
+              <h3>{filteredSr.length} заявок</h3>
+            </div>
+            {filteredSr.length === 0 ? (
+              <div className="empty-state">{Icon.briefcase}<p>Заявок за цим фільтром немає</p></div>
+            ) : (
+              <div className="requests-list">
+                {filteredSr.map(r => (
+                  <div key={r.id} className="request-row">
+                    <div className="request-row-info">
+                      <div className="request-row-top">
+                        <span className="request-name">{r.name}</span>
+                        <span className="request-address">{r.address}</span>
+                        <span className="request-phone">{r.phone}</span>
+                      </div>
+                      <div className="request-message">
+                        <strong style={{ color: 'var(--blue-700)', marginRight: '0.5rem' }}>{r.serviceName}</strong>
+                        {r.message}
+                      </div>
+                      {r.preferredDate && (
+                        <div className="request-date">Бажана дата: {new Date(r.preferredDate).toLocaleDateString('uk-UA')}</div>
+                      )}
+                      {r.createdAt && <div className="request-date">{formatDate(r.createdAt)}</div>}
+                    </div>
+                    <div className="request-row-actions">
+                      <span className={`status-tag ${STATUS_CSS[r.status]}`}>{r.status}</span>
+                      {user.role !== 'worker' && (
+                        <div className="request-action-buttons">
+                          {r.status === 'Нова' && (
+                            <>
+                              <button className="btn btn-sm btn-success" onClick={() => handleSrStatus(r.id, 'Взята в роботу')}>{Icon.clock} В роботу</button>
+                              <button className="btn btn-sm btn-danger" onClick={() => handleSrStatus(r.id, 'Відхиленна')}>{Icon.close} Відхилити</button>
+                            </>
+                          )}
+                          {r.status === 'Взята в роботу' && (
+                            <>
+                              <button className="btn btn-sm btn-success" onClick={() => handleSrStatus(r.id, 'Виконанна')}>{Icon.check} Виконано</button>
+                              <button className="btn btn-sm btn-danger" onClick={() => handleSrStatus(r.id, 'Відхиленна')}>{Icon.close} Відхилити</button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="request-note-section">
+                      {editingSrNote === r.id ? (
+                        <>
+                          <textarea className="request-note-textarea" value={srNoteValue} onChange={e => setSrNoteValue(e.target.value)} placeholder="Нотатка..." autoFocus rows={2} />
+                          <div className="request-note-actions">
+                            <button className="btn btn-sm btn-success" onClick={() => handleSaveSrNote(r.id)}>{Icon.check} Зберегти</button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => setEditSrNote(null)}>Скасувати</button>
+                          </div>
+                        </>
+                      ) : (
+                        <button className={`request-note-btn${r.note ? ' has-note' : ''}`} onClick={() => { setEditSrNote(r.id); setSrNoteValue(r.note || ''); }}>
+                          {Icon.edit}<span>{r.note || 'Додати нотатку'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   /* ════════════════ SETTINGS ════════════════ */
   const renderSettings = () => (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -783,21 +1089,25 @@ function Admin() {
         <div className="admin-content">
           {activeSection === 'dashboard' && renderDashboard()}
           {activeSection === 'requests'  && renderRequests()}
+          {activeSection === 'services'  && renderServices()}
           {activeSection === 'news'      && renderNews()}
           {activeSection === 'gallery'   && renderGallery()}
           {activeSection === 'settings'  && renderSettings()}
         </div>
       </div>
 
-      {/* Toast */}
-      {toast && (
-        <div className={`toast toast-${toast.type}`}>
-          {toast.type === 'success' && Icon.check}
-          {toast.type === 'error'   && Icon.close}
-          <span>{toast.message}</span>
-          <button className="toast-close" onClick={() => setToast(null)}>{Icon.close}</button>
-        </div>
-      )}
+      {/* Toasts */}
+      <div className="admin-toasts">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast toast-${t.type}`}>
+            {t.type === 'success' && Icon.check}
+            {t.type === 'error'   && Icon.close}
+            {t.type === 'socket'  && Icon.bell}
+            <span>{t.message}</span>
+            <button className="toast-close" onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}>{Icon.close}</button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http';
+import { Server as SocketIO } from 'socket.io';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,6 +13,8 @@ const dataPath = path.join(__dirname, 'data.json');
 const distPath = path.join(__dirname, '../dist');
 const uploadsPath = path.join(__dirname, 'uploads');
 const app = express();
+const httpServer = createServer(app);
+const io = new SocketIO(httpServer, { cors: { origin: '*' } });
 const sessions = new Map();
 
 await mkdir(uploadsPath, { recursive: true });
@@ -60,6 +64,49 @@ const defaultData = {
     { id: 3, url: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80' },
   ],
   requests: [],
+  services: [
+    {
+      id: 1,
+      title: 'Автовишка',
+      description: 'Надаємо послуги автовишки для робіт на висоті: монтаж освітлення, обрізка дерев, ремонт покрівлі та фасадів.',
+      price: 'від 800 грн/год',
+      image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80',
+      features: ['Висота підйому до 18 м', 'Оператор у вартості', 'Виїзд по місту та за містом'],
+    },
+    {
+      id: 2,
+      title: 'Прибирання після ремонту',
+      description: 'Генеральне прибирання квартир, офісів та приміщень після будівельних і ремонтних робіт.',
+      price: 'від 50 грн/м²',
+      image: 'https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=900&q=80',
+      features: ['Квартири, офіси, приміщення', 'Хімчистка покриттів', 'Виїзд у той же день'],
+    },
+    {
+      id: 3,
+      title: 'Вивезення будівельного сміття',
+      description: 'Швидке та зручне вивезення будівельного та великогабаритного сміття різних обсягів.',
+      price: 'від 600 грн/рейс',
+      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80',
+      features: ['Вантажники у вартості', 'Різні обсяги', 'Оперативний виїзд'],
+    },
+    {
+      id: 4,
+      title: 'Аварійна служба',
+      description: 'Цілодобова аварійна служба з усунення поломок сантехніки, електрики та інших неполадок.',
+      price: 'від 350 грн/виклик',
+      image: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=900&q=80',
+      features: ['Цілодобово 24/7', 'Виїзд до 30 хвилин', 'Сантехніка та електрика'],
+    },
+    {
+      id: 5,
+      title: 'Дезінфекція приміщень',
+      description: 'Профілактична та знезаражуюча обробка квартир, офісів та підвалів сертифікованими засобами.',
+      price: 'від 15 грн/м²',
+      image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?auto=format&fit=crop&w=900&q=80',
+      features: ['Сертифіковані засоби', 'Безпечно для людей та тварин', 'Документ про обробку'],
+    },
+  ],
+  serviceRequests: [],
   admins: [
     {
       id: 1,
@@ -103,7 +150,7 @@ function requireSuperadmin(req, res, next) {
 
 app.get('/api/site', async (req, res) => {
   const data = await loadData();
-  res.json({ logo: data.logo, news: data.news, gallery: data.gallery });
+  res.json({ logo: data.logo, news: data.news, gallery: data.gallery, services: data.services || [] });
 });
 
 app.post('/api/request', async (req, res) => {
@@ -116,6 +163,7 @@ app.post('/api/request', async (req, res) => {
   };
   data.requests.unshift(requestData);
   await saveData(data);
+  io.emit('new-request', requestData);
   res.json(requestData);
 });
 
@@ -269,6 +317,71 @@ app.delete('/api/admin/admins/:id', authMiddleware, requireSuperadmin, async (re
   res.json({ ok: true });
 });
 
+/* ── Services ── */
+app.post('/api/service-request', async (req, res) => {
+  const data = await loadData();
+  if (!data.serviceRequests) data.serviceRequests = [];
+  const sr = { id: Date.now(), status: 'Нова', note: '', createdAt: new Date().toISOString(), ...req.body };
+  data.serviceRequests.unshift(sr);
+  await saveData(data);
+  io.emit('new-service-request', sr);
+  res.json(sr);
+});
+
+app.get('/api/admin/service-requests', authMiddleware, async (req, res) => {
+  const data = await loadData();
+  res.json({ serviceRequests: data.serviceRequests || [] });
+});
+
+app.post('/api/admin/service-requests/:id/status', authMiddleware, async (req, res) => {
+  const data = await loadData();
+  const sr = (data.serviceRequests || []).find(i => i.id === Number(req.params.id));
+  if (!sr) return res.status(404).json({ error: 'Заявку не знайдено' });
+  const { status } = req.body;
+  if (!statusTransitions[sr.status]?.includes(status)) {
+    return res.status(400).json({ error: 'Невірний перехід статусу' });
+  }
+  sr.status = status;
+  await saveData(data);
+  res.json({ serviceRequest: sr });
+});
+
+app.patch('/api/admin/service-requests/:id/note', authMiddleware, async (req, res) => {
+  const data = await loadData();
+  const sr = (data.serviceRequests || []).find(i => i.id === Number(req.params.id));
+  if (!sr) return res.status(404).json({ error: 'Заявку не знайдено' });
+  sr.note = req.body.note ?? '';
+  await saveData(data);
+  res.json({ serviceRequest: sr });
+});
+
+app.post('/api/admin/services', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  if (!data.services) data.services = [];
+  const service = { id: Date.now(), ...req.body };
+  data.services.push(service);
+  await saveData(data);
+  res.json({ service });
+});
+
+app.put('/api/admin/services/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.services || []).findIndex(s => s.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Послугу не знайдено' });
+  data.services[idx] = { ...data.services[idx], ...req.body, id: data.services[idx].id };
+  await saveData(data);
+  res.json({ service: data.services[idx] });
+});
+
+app.delete('/api/admin/services/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.services || []).findIndex(s => s.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Послугу не знайдено' });
+  data.services.splice(idx, 1);
+  await saveData(data);
+  res.json({ ok: true });
+});
+
 app.post('/api/admin/upload', authMiddleware, requireSuperadmin, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
   res.json({ url: `/uploads/${req.file.filename}` });
@@ -280,6 +393,6 @@ app.get('*', (req, res) => {
 });
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
+httpServer.listen(port, () => {
   console.log(`ЖЕКП API запущено на http://localhost:${port}`);
 });

@@ -5,6 +5,7 @@ import About from './pages/About.jsx';
 import News from './pages/News.jsx';
 import Gallery from './pages/Gallery.jsx';
 import Request from './pages/Request.jsx';
+import Services from './pages/Services.jsx';
 import Admin from './pages/Admin.jsx';
 import WidgetRequest from './components/WidgetRequest.jsx';
 import * as api from './api/zhkpApi.js';
@@ -21,6 +22,7 @@ function HouseIcon() {
 function App() {
   const [news, setNews] = useState([]);
   const [gallery, setGallery] = useState([]);
+  const [services, setServices] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +36,7 @@ function App() {
         const site = await api.getSite();
         setNews(site.news || []);
         setGallery(site.gallery || []);
+        setServices(site.services || []);
       } catch (error) {
         console.error('Не вдалося завантажити сайт:', error);
       }
@@ -80,6 +83,7 @@ function App() {
               <NavLink {...activeLink} to="/about" onClick={() => setMobileOpen(false)}>Про нас</NavLink>
               <NavLink {...activeLink} to="/news" onClick={() => setMobileOpen(false)}>Новини</NavLink>
               <NavLink {...activeLink} to="/gallery" onClick={() => setMobileOpen(false)}>Галерея</NavLink>
+              <NavLink {...activeLink} to="/services" onClick={() => setMobileOpen(false)}>Послуги</NavLink>
               <NavLink {...activeLink} to="/request" onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>
             </nav>
           </div>
@@ -99,6 +103,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/news" element={<News news={news} />} />
             <Route path="/gallery" element={<Gallery gallery={gallery} />} />
+            <Route path="/services" element={<Services services={services} />} />
             <Route path="/request" element={<Request onSubmit={addRequest} />} />
           </Routes>
         </main>

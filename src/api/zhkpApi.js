@@ -115,6 +115,41 @@ export async function deleteAdmin(id, token) {
   return request(`/admin/admins/${id}`, { method: 'DELETE', token });
 }
 
+export async function submitServiceRequest(payload) {
+  return request('/service-request', { method: 'POST', body: payload });
+}
+
+export async function getServiceRequests(token) {
+  const result = await request('/admin/service-requests', { token });
+  return result.serviceRequests;
+}
+
+export async function updateServiceRequestStatus(id, status, token) {
+  return request(`/admin/service-requests/${id}/status`, { method: 'POST', body: { status }, token });
+}
+
+export async function updateServiceRequestNote(id, note, token) {
+  return request(`/admin/service-requests/${id}/note`, { method: 'PATCH', body: { note }, token });
+}
+
+export async function addService(payload, token) {
+  const result = await request('/admin/services', { method: 'POST', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+export async function updateService(id, payload, token) {
+  const result = await request(`/admin/services/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+export async function deleteService(id, token) {
+  const result = await request(`/admin/services/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
 export async function uploadFile(file, token) {
   const formData = new FormData();
   formData.append('file', file);
