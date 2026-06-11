@@ -69,7 +69,7 @@ function Request({ onSubmit }) {
 
   return (
     <section className="page page-request">
-      <div className="section-header">
+      <div className="section-header" style={{ justifyContent: 'center', textAlign: 'center' }}>
         <div>
           <h2>Заявка на обслуговування</h2>
           <p>Опишіть проблему і ми візьмемося за неї першочергово.</p>
@@ -124,7 +124,7 @@ function Request({ onSubmit }) {
           {errors.message && <span className="form-error">{errors.message}</span>}
         </div>
 
-        <button className="btn btn-primary" type="submit" disabled={loading}>
+        <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
           {loading ? 'Надсилання...' : 'Відправити заявку'}
         </button>
       </form>

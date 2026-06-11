@@ -13,7 +13,15 @@
       "Bash(npm install *)",
       "Bash(xargs kill -9)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK, news:', len\\(d['news']\\)\\)\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:4000/api/admin/upload)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:4000/api/admin/upload)",
+      "WebSearch",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({'admins': d.get\\('admins', []\\)}, indent=2\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Bash(python3 -c \"import PIL; print\\('PIL:', PIL.__version__\\)\")",
+      "Bash(pip3 install *)",
+      "Bash(python3 -c \"from PIL import Image; print\\('ok'\\)\")",
+      "Bash(python3)"
     ]
   }
 }

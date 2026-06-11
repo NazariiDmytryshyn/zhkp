@@ -29,11 +29,12 @@
   "requests": [
     {
       "id": 1781175894906,
-      "status": "Взята в роботу",
+      "status": "Відхиленна",
       "name": "wer",
       "phone": "sdaklfksdkf",
       "address": "wer",
-      "message": "wer"
+      "message": "wer",
+      "note": "Тест"
     },
     {
       "id": 1781175638573,
@@ -47,14 +48,20 @@
   "admins": [
     {
       "id": 1,
-      "username": "admin",
-      "password": "Admin1234",
+      "username": "nashdim",
+      "password": "Nashdim@2026",
       "role": "superadmin"
     },
     {
       "id": 1781175601809,
       "username": "Oleg",
       "password": "Yfpsr_0978981183",
+      "role": "viewer"
+    },
+    {
+      "id": 1781215966236,
+      "username": "Ivan",
+      "password": "1234",
       "role": "viewer"
     }
   ]

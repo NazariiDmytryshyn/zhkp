@@ -19,6 +19,7 @@ const Icon = {
   user:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   users:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   img_off:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  edit:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -48,6 +49,10 @@ function Admin() {
   const [user, setUser]               = useState(null);
   const [activeSection, setActive]    = useState('dashboard');
 
+  useEffect(() => {
+    if (user?.role === 'worker') setActive('requests');
+  }, [user?.role]);
+
   /* login */
   const [loginData, setLogin]         = useState({ username: '', password: '' });
   const [loginError, setLoginError]   = useState('');
@@ -70,7 +75,7 @@ function Admin() {
   const [galleryFilePreview, setGalleryFilePreview] = useState('');
   const [logoInput, setLogoInput]       = useState('');
   const [logoPreview, setLogoPreview]   = useState('');
-  const [newAdmin, setNewAdmin]         = useState({ username: '', password: '', role: 'viewer' });
+  const [newAdmin, setNewAdmin]         = useState({ username: '', password: '', role: 'worker' });
 
   /* ui */
   const [toast, setToast]             = useState(null);
@@ -78,6 +83,9 @@ function Admin() {
   const [showNewsForm, setShowNews]   = useState(false);
   const [showPhotoForm, setShowPhoto] = useState(false);
   const [showAdminForm, setShowAdminF]= useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(null);
+  const [noteValue, setNoteValue]     = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -147,6 +155,15 @@ function Admin() {
     setGallery([]);
     setAdmins([]);
     setActive('dashboard');
+  };
+
+  const handleSaveNote = async (id) => {
+    try {
+      await api.updateRequestNote(id, noteValue, token);
+      await refreshData();
+      setEditingNote(null);
+      showToast('Нотатку збережено');
+    } catch (e) { showToast(e.message, 'error'); }
   };
 
   const handleStatusChange = async (id, status) => {
@@ -250,7 +267,7 @@ function Admin() {
         <div className="admin-login-card">
           <div className="admin-login-logo">
             <div className="admin-login-logo-icon">{Icon.house}</div>
-            <h2>ЖЕКП Адмін</h2>
+            <h2>ПП "Наш Дім" — Адмін</h2>
             <p>Увійдіть для керування сайтом</p>
           </div>
           <form className="admin-login-form" onSubmit={handleLogin}>
@@ -279,9 +296,6 @@ function Admin() {
             <button className="btn btn-primary" type="submit" style={{ justifyContent: 'center' }}>
               Увійти
             </button>
-            <div className="login-hint">
-              Демо-доступ: <strong>admin</strong> / <strong>Admin1234</strong>
-            </div>
           </form>
         </div>
       </div>
@@ -289,13 +303,15 @@ function Admin() {
   }
 
   /* ════════════════ SIDEBAR ITEMS ════════════════ */
-  const navItems = [
-    { id: 'dashboard', label: 'Огляд',    icon: Icon.grid },
-    { id: 'requests',  label: 'Заявки',   icon: Icon.list },
-    { id: 'news',      label: 'Новини',   icon: Icon.news,  superonly: false },
-    { id: 'gallery',   label: 'Галерея',  icon: Icon.image, superonly: false },
-    ...(user.role === 'superadmin' ? [{ id: 'settings', label: 'Налаштування', icon: Icon.settings }] : []),
-  ];
+  const navItems = user.role === 'worker'
+    ? [{ id: 'requests', label: 'Заявки', icon: Icon.list }]
+    : [
+        { id: 'dashboard', label: 'Огляд',   icon: Icon.grid },
+        { id: 'requests',  label: 'Заявки',  icon: Icon.list },
+        { id: 'news',      label: 'Новини',  icon: Icon.news  },
+        { id: 'gallery',   label: 'Галерея', icon: Icon.image },
+        ...(user.role === 'superadmin' ? [{ id: 'settings', label: 'Налаштування', icon: Icon.settings }] : []),
+      ];
 
   const sectionTitle = navItems.find((n) => n.id === activeSection)?.label ?? '';
 
@@ -396,7 +412,7 @@ function Admin() {
                 </div>
                 <div className="request-row-actions">
                   <span className={`status-tag ${STATUS_CSS[r.status]}`}>{r.status}</span>
-                  {user.role === 'superadmin' && (
+                  {user.role !== 'worker' && (
                     <div className="request-action-buttons">
                       {r.status === 'Нова' && (
                         <>
@@ -419,6 +435,36 @@ function Admin() {
                         </>
                       )}
                     </div>
+                  )}
+                </div>
+                <div className="request-note-section">
+                  {editingNote === r.id ? (
+                    <>
+                      <textarea
+                        className="request-note-textarea"
+                        value={noteValue}
+                        onChange={(e) => setNoteValue(e.target.value)}
+                        placeholder="Введіть нотатку..."
+                        autoFocus
+                        rows={2}
+                      />
+                      <div className="request-note-actions">
+                        <button className="btn btn-sm btn-success" onClick={() => handleSaveNote(r.id)}>
+                          {Icon.check} Зберегти
+                        </button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => setEditingNote(null)}>
+                          Скасувати
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      className={`request-note-btn${r.note ? ' has-note' : ''}`}
+                      onClick={() => { setEditingNote(r.id); setNoteValue(r.note || ''); }}
+                    >
+                      {Icon.edit}
+                      <span>{r.note || 'Додати нотатку'}</span>
+                    </button>
                   )}
                 </div>
               </div>
@@ -640,7 +686,8 @@ function Admin() {
             <div className="form-group" style={{ maxWidth: 240 }}>
               <label className="form-label">Роль</label>
               <select className="form-select" value={newAdmin.role} onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })}>
-                <option value="viewer">Перегляд заявок</option>
+                <option value="worker">Тільки перегляд заявок</option>
+                <option value="viewer">Менеджер заявок</option>
                 <option value="superadmin">Повний доступ</option>
               </select>
             </div>
@@ -660,7 +707,7 @@ function Admin() {
                 <div className="admin-avatar">{a.username[0].toUpperCase()}</div>
                 <div className="admin-list-name">{a.username}</div>
                 <span className={`admin-role-tag ${a.role}`}>
-                  {a.role === 'superadmin' ? 'Суперадмін' : 'Переглядач'}
+                  {a.role === 'superadmin' ? 'Суперадмін' : a.role === 'viewer' ? 'Менеджер' : 'Працівник'}
                 </span>
                 {a.id !== 1 && (
                   <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteAdmin(a.id)} title="Видалити">
@@ -680,11 +727,11 @@ function Admin() {
     <div className="admin-shell">
 
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar${sidebarOpen ? ' mobile-open' : ''}`}>
         <div className="admin-brand">
           <div className="admin-brand-icon">{Icon.house}</div>
           <div className="admin-brand-text">
-            <span className="admin-brand-title">ЖЕКП Сервіс</span>
+            <span className="admin-brand-title">ПП "Наш Дім"</span>
             <span className="admin-brand-subtitle">Адмін-панель</span>
           </div>
         </div>
@@ -694,7 +741,7 @@ function Admin() {
             <button
               key={item.id}
               className={`admin-nav-item ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => setActive(item.id)}
+              onClick={() => { setActive(item.id); setSidebarOpen(false); }}
             >
               {item.icon}
               {item.label}
@@ -709,7 +756,7 @@ function Admin() {
           <div className="admin-user-info">
             <div className="admin-user-name">{user.username}</div>
             <div className="admin-role-badge">
-              {user.role === 'superadmin' ? 'Суперадмін' : 'Переглядач'}
+              {user.role === 'superadmin' ? 'Суперадмін' : user.role === 'viewer' ? 'Менеджер' : 'Працівник'}
             </div>
           </div>
           <button className="admin-logout-btn" onClick={handleLogout}>
@@ -718,10 +765,17 @@ function Admin() {
         </div>
       </aside>
 
+      {sidebarOpen && <div className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
       {/* Main */}
       <div className="admin-main">
         <div className="admin-topbar">
-          <h2>{sectionTitle}</h2>
+          <div className="admin-topbar-left">
+            <button className="admin-sidebar-toggle" onClick={() => setSidebarOpen(v => !v)} aria-label="Меню">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+            </button>
+            <h2>{sectionTitle}</h2>
+          </div>
           <span className="admin-topbar-meta">
             {new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>

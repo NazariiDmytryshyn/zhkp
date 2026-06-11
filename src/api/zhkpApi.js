@@ -68,6 +68,10 @@ export async function updateRequestStatus(id, status, token) {
   return request(`/admin/requests/${id}/status`, { method: 'POST', body: { status }, token });
 }
 
+export async function updateRequestNote(id, note, token) {
+  return request(`/admin/requests/${id}/note`, { method: 'PATCH', body: { note }, token });
+}
+
 export async function addNews(payload, token) {
   const result = await request('/admin/news', { method: 'POST', body: payload, token });
   window.dispatchEvent(new Event('zhkp-data-updated'));

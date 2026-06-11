@@ -63,8 +63,8 @@ const defaultData = {
   admins: [
     {
       id: 1,
-      username: 'admin',
-      password: 'Admin1234',
+      username: 'nashdim',
+      password: 'Nashdim@2026',
       role: 'superadmin',
     },
   ],
@@ -165,7 +165,16 @@ const statusTransitions = {
   'Виконанна': [],
 };
 
-app.post('/api/admin/requests/:id/status', authMiddleware, requireSuperadmin, async (req, res) => {
+app.patch('/api/admin/requests/:id/note', authMiddleware, async (req, res) => {
+  const data = await loadData();
+  const request = data.requests.find((item) => item.id === Number(req.params.id));
+  if (!request) return res.status(404).json({ error: 'Заявку не знайдено' });
+  request.note = req.body.note ?? '';
+  await saveData(data);
+  res.json({ request });
+});
+
+app.post('/api/admin/requests/:id/status', authMiddleware, async (req, res) => {
   const data = await loadData();
   const request = data.requests.find((item) => item.id === Number(req.params.id));
   if (!request) {
@@ -235,7 +244,7 @@ app.post('/api/admin/admins', authMiddleware, requireSuperadmin, async (req, res
   if (!username || !password) {
     return res.status(400).json({ error: 'Логін та пароль обов\'язкові' });
   }
-  if (!['viewer', 'superadmin'].includes(role)) {
+  if (!['viewer', 'superadmin', 'worker'].includes(role)) {
     return res.status(400).json({ error: 'Невірна роль адміністратора' });
   }
   if (data.admins.some((item) => item.username === username)) {
