@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(sed -i \"s/\\\\xe2\\\\x80\\\\x99/'/g\" /Users/nazar/Documents/dev/PP_NashDim/src/pages/Request.jsx)",
+      "Bash(sed -i \"s/\\\\xe2\\\\x80\\\\x99/'/g\" /Users/nazar/Documents/dev/PP_NashDim/src/components/WidgetRequest.jsx)",
+      "Bash(sed -i \"s/\\\\xe2\\\\x80\\\\x99/'/g\" /Users/nazar/Documents/dev/PP_NashDim/src/pages/Admin.jsx)",
+      "Bash(sed -i \"s/\\\\xe2\\\\x80\\\\x99/'/g\" /Users/nazar/Documents/dev/PP_NashDim/src/pages/About.jsx)",
+      "Bash(sed -i \"s/\\\\xe2\\\\x80\\\\x99/'/g\" /Users/nazar/Documents/dev/PP_NashDim/src/pages/Home.jsx)",
+      "Bash(node server/index.js)",
+      "Bash(curl -s http://localhost:4000/api/site)",
+      "Bash(python3 -m json.tool)",
+      "Bash(npm install *)",
+      "Bash(xargs kill -9)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK, news:', len\\(d['news']\\)\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:4000/api/admin/upload)"
+    ]
+  }
+}

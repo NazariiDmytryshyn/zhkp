@@ -1,0 +1,61 @@
+{
+  "logo": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80",
+  "news": [
+    {
+      "id": 2,
+      "title": "Графік відключень води",
+      "summary": "Актуальна інформація про роботи у вашому районі.",
+      "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80"
+    }
+  ],
+  "gallery": [
+    {
+      "id": 1781210868369,
+      "url": "/uploads/1781210868320-632f10c6.png"
+    },
+    {
+      "id": 1,
+      "url": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": 2,
+      "url": "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"
+    },
+    {
+      "id": 3,
+      "url": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80"
+    }
+  ],
+  "requests": [
+    {
+      "id": 1781175894906,
+      "status": "Взята в роботу",
+      "name": "wer",
+      "phone": "sdaklfksdkf",
+      "address": "wer",
+      "message": "wer"
+    },
+    {
+      "id": 1781175638573,
+      "status": "Виконанна",
+      "name": "ksdfkj",
+      "phone": "0978981183",
+      "address": "Савури 7",
+      "message": "івлроаіволдоародав"
+    }
+  ],
+  "admins": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "Admin1234",
+      "role": "superadmin"
+    },
+    {
+      "id": 1781175601809,
+      "username": "Oleg",
+      "password": "Yfpsr_0978981183",
+      "role": "viewer"
+    }
+  ]
+}
