@@ -1,18 +1,21 @@
 import { Link } from 'react-router-dom';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 /* ─── Hooks ──────────────────────────────────────────────── */
 function useInView() {
-  const ref = useRef(null);
   const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
+  const obsRef = useRef(null);
+
+  const ref = useCallback((node) => {
+    if (obsRef.current) { obsRef.current.disconnect(); obsRef.current = null; }
+    if (!node) return;
+    obsRef.current = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setInView(true); obsRef.current?.disconnect(); } },
       { threshold: 0.08, rootMargin: '0px 0px -60px 0px' }
     );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
+    obsRef.current.observe(node);
   }, []);
+
   return [ref, inView];
 }
 
