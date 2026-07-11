@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as api from '../api/zhkpApi.js';
 
 function stripHtml(html) {
@@ -18,6 +18,12 @@ const CheckCircleIcon = () => (
   </svg>
 );
 
+const CloseIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
 const initialForm = { name: '', phone: '', address: '', preferredDate: '', message: '' };
 
 function validate(v) {
@@ -33,11 +39,17 @@ function validate(v) {
   return e;
 }
 
-function ServiceRequestForm({ service, onClose }) {
+/* ─── Modal ──────────────────────────────────────────────── */
+function ServiceModal({ service, onClose }) {
   const [values, setValues] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   const set = (field) => (e) => {
     setValues(p => ({ ...p, [field]: e.target.value }));
@@ -60,78 +72,79 @@ function ServiceRequestForm({ service, onClose }) {
     }
   };
 
-  if (done) {
-    return (
-      <div className="service-form-success">
-        <div className="service-form-success-icon"><CheckCircleIcon /></div>
-        <h4>Заявку надіслано!</h4>
-        <p>Ми зв'яжемося з вами найближчим часом та узгодимо зручний час.</p>
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>Закрити</button>
-      </div>
-    );
-  }
-
   return (
-    <form className="service-form" onSubmit={handleSubmit} noValidate>
-      <h4 className="service-form-title">
-        Замовити: <span>{service.title}</span>
-      </h4>
-      <div className="service-form-grid">
-        <div className="form-group">
-          <label className="form-label">{"Ім'я *"}</label>
-          <input className={`form-input${errors.name ? ' has-error' : ''}`} value={values.name} onChange={set('name')} placeholder="Іван Петренко" />
-          {errors.name && <span className="form-error">{errors.name}</span>}
+    <div className="svc-modal-backdrop" onClick={onClose}>
+      <div className="svc-modal" onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="svc-modal-header">
+          <div className="svc-modal-header-info">
+            {service.image && (
+              <img className="svc-modal-thumb" src={service.image} alt={service.title} />
+            )}
+            <div>
+              <h3 className="svc-modal-title">{service.title}</h3>
+              {service.price && <span className="service-price-badge">{service.price}</span>}
+            </div>
+          </div>
+          <button className="svc-modal-close" onClick={onClose}><CloseIcon /></button>
         </div>
-        <div className="form-group">
-          <label className="form-label">Телефон *</label>
-          <input className={`form-input${errors.phone ? ' has-error' : ''}`} value={values.phone} onChange={set('phone')} placeholder="+380XXXXXXXXX" />
-          {errors.phone && <span className="form-error">{errors.phone}</span>}
-        </div>
-        <div className="form-group">
-          <label className="form-label">Адреса *</label>
-          <input className={`form-input${errors.address ? ' has-error' : ''}`} value={values.address} onChange={set('address')} placeholder="вул. Шевченка, 12" />
-          {errors.address && <span className="form-error">{errors.address}</span>}
-        </div>
-        <div className="form-group">
-          <label className="form-label">Бажана дата</label>
-          <input type="date" className="form-input" value={values.preferredDate} onChange={set('preferredDate')} />
+
+        {/* Body */}
+        <div className="svc-modal-body">
+          {done ? (
+            <div className="service-form-success">
+              <div className="service-form-success-icon"><CheckCircleIcon /></div>
+              <h4>Заявку надіслано!</h4>
+              <p>Ми зв'яжемося з вами найближчим часом та узгодимо зручний час.</p>
+              <button className="btn btn-primary" onClick={onClose}>Закрити</button>
+            </div>
+          ) : (
+            <form className="service-form" onSubmit={handleSubmit} noValidate>
+              <div className="service-form-grid">
+                <div className="form-group">
+                  <label className="form-label">{"Ім'я *"}</label>
+                  <input className={`form-input${errors.name ? ' has-error' : ''}`} value={values.name} onChange={set('name')} placeholder="Іван Петренко" />
+                  {errors.name && <span className="form-error">{errors.name}</span>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Телефон *</label>
+                  <input className={`form-input${errors.phone ? ' has-error' : ''}`} value={values.phone} onChange={set('phone')} placeholder="+380XXXXXXXXX" />
+                  {errors.phone && <span className="form-error">{errors.phone}</span>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Адреса *</label>
+                  <input className={`form-input${errors.address ? ' has-error' : ''}`} value={values.address} onChange={set('address')} placeholder="вул. Шевченка, 12" />
+                  {errors.address && <span className="form-error">{errors.address}</span>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Бажана дата</label>
+                  <input type="date" className="form-input" value={values.preferredDate} onChange={set('preferredDate')} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Деталі / побажання</label>
+                <textarea className="form-textarea" style={{ minHeight: '80px' }} value={values.message} onChange={set('message')} placeholder="Опишіть детально що потрібно зробити..." />
+              </div>
+              {errors.submit && <div className="login-error">{errors.submit}</div>}
+              <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+                {loading ? 'Надсилання...' : 'Відправити заявку'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
-      <div className="form-group">
-        <label className="form-label">Деталі / побажання</label>
-        <textarea
-          className="form-textarea"
-          style={{ minHeight: '80px' }}
-          value={values.message}
-          onChange={set('message')}
-          placeholder="Опишіть детально що потрібно зробити..."
-        />
-      </div>
-      {errors.submit && <div className="login-error">{errors.submit}</div>}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={loading}
-          style={{ flex: 1, justifyContent: 'center' }}
-        >
-          {loading ? 'Надсилання...' : 'Відправити заявку'}
-        </button>
-        <button className="btn btn-ghost" type="button" onClick={onClose}>
-          Скасувати
-        </button>
-      </div>
-    </form>
+    </div>
   );
 }
 
-function ServiceCard({ service, isActive, onToggle }) {
+/* ─── Card ───────────────────────────────────────────────── */
+function ServiceCard({ service, onOrder }) {
   const [descExpanded, setDescExpanded] = useState(false);
-  const plainText = stripHtml(service.description);
-  const isLong = plainText.length > 130;
+  const isLong = stripHtml(service.description).length > 130;
 
   return (
-    <article className={`service-page-card${isActive ? ' is-active' : ''}`}>
+    <article className="service-page-card">
       <div className="service-page-card-img">
         {service.image
           ? <img src={service.image} alt={service.title} />
@@ -159,25 +172,17 @@ function ServiceCard({ service, isActive, onToggle }) {
             ))}
           </ul>
         )}
-        <button
-          className={`btn ${isActive ? 'btn-outline-danger' : 'btn-primary'} service-order-btn`}
-          onClick={onToggle}
-        >
-          {isActive ? 'Скасувати' : 'Замовити послугу'}
+        <button className="btn btn-primary service-order-btn" onClick={onOrder}>
+          Замовити послугу
         </button>
       </div>
-      {isActive && (
-        <div className="service-form-wrap">
-          <ServiceRequestForm service={service} onClose={onToggle} />
-        </div>
-      )}
     </article>
   );
 }
 
+/* ─── Page ───────────────────────────────────────────────── */
 function Services({ services }) {
-  const [activeId, setActiveId] = useState(null);
-  const toggle = (id) => setActiveId(p => p === id ? null : id);
+  const [activeService, setActiveService] = useState(null);
 
   return (
     <section className="page page-services">
@@ -195,14 +200,13 @@ function Services({ services }) {
       ) : (
         <div className="services-page-grid">
           {services.map(s => (
-            <ServiceCard
-              key={s.id}
-              service={s}
-              isActive={activeId === s.id}
-              onToggle={() => toggle(s.id)}
-            />
+            <ServiceCard key={s.id} service={s} onOrder={() => setActiveService(s)} />
           ))}
         </div>
+      )}
+
+      {activeService && (
+        <ServiceModal service={activeService} onClose={() => setActiveService(null)} />
       )}
     </section>
   );
