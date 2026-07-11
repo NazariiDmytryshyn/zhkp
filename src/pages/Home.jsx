@@ -8,7 +8,7 @@ function useInView() {
   useEffect(() => {
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
-      { threshold: 0, rootMargin: '0px 0px 100px 0px' }
+      { threshold: 0.08, rootMargin: '0px 0px -60px 0px' }
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
