@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -110,8 +111,8 @@ const defaultData = {
   admins: [
     {
       id: 1,
-      username: 'nashdim',
-      password: 'Nashdim@2026',
+      username: process.env.ADMIN_USERNAME || 'admin',
+      password: process.env.ADMIN_PASSWORD || 'changeme',
       role: 'superadmin',
     },
   ],
