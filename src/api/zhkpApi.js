@@ -150,6 +150,12 @@ export async function deleteService(id, token) {
   return result;
 }
 
+export async function updateSiteContent(payload, token) {
+  const result = await request('/admin/site-content', { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
 export async function uploadFile(file, token) {
   const formData = new FormData();
   formData.append('file', file);

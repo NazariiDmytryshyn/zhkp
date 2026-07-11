@@ -23,6 +23,7 @@ function App() {
   const [news, setNews] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [services, setServices] = useState([]);
+  const [siteContent, setSiteContent] = useState({});
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,6 +38,7 @@ function App() {
         setNews(site.news || []);
         setGallery(site.gallery || []);
         setServices(site.services || []);
+        setSiteContent(site.siteContent || {});
       } catch (error) {
         console.error('Не вдалося завантажити сайт:', error);
       }
@@ -100,7 +102,7 @@ function App() {
         <main className="layout-main">
           <Routes>
             <Route path="/" element={<Home news={news} gallery={gallery} />} />
-            <Route path="/about" element={<About />} />
+            <Route path="/about" element={<About siteContent={siteContent} />} />
             <Route path="/news" element={<News news={news} />} />
             <Route path="/gallery" element={<Gallery gallery={gallery} />} />
             <Route path="/services" element={<Services services={services} />} />
@@ -117,9 +119,9 @@ function App() {
             <div className="footer-about">
               <div className="footer-logo">
                 <div className="footer-logo-icon"><HouseIcon /></div>
-                <span className="footer-logo-text">ПП "Наш Дім"</span>
+                <span className="footer-logo-text">{siteContent.companyName || 'ПП "Наш Дім"'}</span>
               </div>
-              <p>Приватне підприємство "Наш Дім" — управління та обслуговування житлового фонду міста Тернопіль з 2000 року. Швидке реагування на заявки мешканців, прозорість та якість.</p>
+              <p>{siteContent.tagline || 'Приватне підприємство "Наш Дім" — управління та обслуговування житлового фонду міста Тернопіль з 2000 року. Швидке реагування на заявки мешканців, прозорість та якість.'}</p>
             </div>
 
             <div className="footer-section">
@@ -138,19 +140,19 @@ function App() {
               <div className="footer-contact-list">
                 <div className="footer-contact-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  вул. Клима Савури, 3, м. Тернопіль
+                  {siteContent.address || 'вул. Клима Савури, 3, м. Тернопіль'}
                 </div>
                 <div className="footer-contact-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.64 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>
-                  +380 (352) 24-34-75
+                  {siteContent.phone || '+380 (352) 24-34-75'}
                 </div>
                 <div className="footer-contact-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  info@nashdim-te.at.ua
+                  {siteContent.email || 'info@nashdim-te.at.ua'}
                 </div>
                 <div className="footer-contact-item">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  Пн–Чт: 8:00–17:15, Пт: 8:00–16:00
+                  {siteContent.hours || 'Пн–Чт: 8:00–17:15, Пт: 8:00–16:00'}
                 </div>
               </div>
             </div>

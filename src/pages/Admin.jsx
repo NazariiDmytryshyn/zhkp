@@ -91,6 +91,12 @@ function Admin() {
   const [galleryFilePreview, setGalleryFilePreview] = useState('');
   const [logoInput, setLogoInput]       = useState('');
   const [logoPreview, setLogoPreview]   = useState('');
+  const [logoMode, setLogoMode]         = useState('url');
+  const [logoFile, setLogoFile]         = useState(null);
+  const [logoFilePreview, setLogoFilePreview] = useState('');
+  const [siteContent, setSiteContent]   = useState({});
+  const [scForm, setScForm]             = useState({});
+  const [scSaving, setScSaving]         = useState(false);
   const [newAdmin, setNewAdmin]         = useState({ username: '', password: '', role: 'worker' });
 
   /* ui */
@@ -160,6 +166,9 @@ function Admin() {
       setGallery(siteData.gallery || []);
       setServices(siteData.services || []);
       setLogoPreview(siteData.logo || '');
+      const sc = siteData.siteContent || {};
+      setSiteContent(sc);
+      setScForm(sc);
       setStats(statsData);
       setServiceReqs(srData || []);
       if (user.role === 'superadmin') {
@@ -325,11 +334,30 @@ function Admin() {
   const handleSetLogo = async (e) => {
     e.preventDefault();
     try {
-      await api.setLogo(logoInput, token);
+      let url = logoInput;
+      if (logoMode === 'file') {
+        if (!logoFile) { showToast('Оберіть файл логотипу', 'error'); return; }
+        url = await api.uploadFile(logoFile, token);
+      }
+      await api.setLogo(url, token);
       setLogoInput('');
+      setLogoFile(null);
+      setLogoFilePreview('');
+      setLogoMode('url');
       await refreshData();
       showToast('Логотип оновлено');
     } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  const handleSaveSiteContent = async (e) => {
+    e.preventDefault();
+    setScSaving(true);
+    try {
+      await api.updateSiteContent(scForm, token);
+      setSiteContent(scForm);
+      showToast('Контент сайту збережено');
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setScSaving(false); }
   };
 
   const handleCreateAdmin = async (e) => {
@@ -954,18 +982,102 @@ function Admin() {
         </div>
         <div className="admin-card-body">
           <div className="logo-preview-wrap">
-            <img className="logo-preview-img" src={logoPreview} alt="Поточний логотип" onError={(e) => { e.target.style.opacity = '0.3'; }} />
+            {logoPreview && (
+              <img className="logo-preview-img" src={logoPreview} alt="Поточний логотип" onError={(e) => { e.target.style.opacity = '0.3'; }} />
+            )}
             <form className="logo-preview-form" onSubmit={handleSetLogo}>
-              <div className="form-group">
-                <label className="form-label">Новий URL логотипу</label>
-                <input className="form-input" value={logoInput} onChange={(e) => setLogoInput(e.target.value)} placeholder="https://..." required />
+              <div className="upload-mode-tabs">
+                <button type="button" className={`upload-mode-tab ${logoMode === 'url' ? 'active' : ''}`} onClick={() => setLogoMode('url')}>URL-посилання</button>
+                <button type="button" className={`upload-mode-tab ${logoMode === 'file' ? 'active' : ''}`} onClick={() => setLogoMode('file')}>З комп'ютера</button>
               </div>
+              {logoMode === 'url' ? (
+                <div className="form-group">
+                  <input className="form-input" value={logoInput} onChange={(e) => setLogoInput(e.target.value)} placeholder="https://..." required />
+                </div>
+              ) : (
+                <label
+                  className={`file-drop-zone ${logoFile ? 'has-file' : ''}`}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files[0];
+                    if (f && f.type.startsWith('image/')) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
+                  }}
+                >
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                    const f = e.target.files[0];
+                    if (f) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
+                  }} />
+                  {logoFilePreview
+                    ? <img className="file-drop-preview" src={logoFilePreview} alt="preview" />
+                    : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>PNG, JPG, SVG до 10 МБ</small></>
+                  }
+                </label>
+              )}
               <button className="btn btn-primary btn-sm" type="submit" style={{ width: 'fit-content' }}>
                 Оновити логотип
               </button>
             </form>
           </div>
         </div>
+      </div>
+
+      {/* Site Content */}
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Контент сайту</h3>
+        </div>
+        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+            <div className="form-group">
+              <label className="form-label">Назва компанії</label>
+              <input className="form-input" value={scForm.companyName || ''} onChange={e => setScForm(p => ({ ...p, companyName: e.target.value }))} placeholder='ПП "Наш Дім"' />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Рік заснування</label>
+              <input className="form-input" value={scForm.founded || ''} onChange={e => setScForm(p => ({ ...p, founded: e.target.value }))} placeholder="2000" />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Слоган / опис у футері</label>
+            <textarea className="form-textarea" style={{ minHeight: '70px' }} value={scForm.tagline || ''} onChange={e => setScForm(p => ({ ...p, tagline: e.target.value }))} placeholder="Коротке описання підприємства для футеру..." />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Керівник</label>
+            <input className="form-input" value={scForm.director || ''} onChange={e => setScForm(p => ({ ...p, director: e.target.value }))} placeholder="Дмитришин Анатолій Євгенович" />
+          </div>
+          <h4 style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 600 }}>Контактні дані</h4>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+            <div className="form-group">
+              <label className="form-label">Адреса</label>
+              <input className="form-input" value={scForm.address || ''} onChange={e => setScForm(p => ({ ...p, address: e.target.value }))} placeholder="вул. Клима Савури, 3, м. Тернопіль" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Телефон</label>
+              <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-34-75" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input className="form-input" value={scForm.email || ''} onChange={e => setScForm(p => ({ ...p, email: e.target.value }))} placeholder="info@nashdim-te.at.ua" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Режим роботи</label>
+              <input className="form-input" value={scForm.hours || ''} onChange={e => setScForm(p => ({ ...p, hours: e.target.value }))} placeholder="Пн–Чт: 8:00–17:15, Пт: 8:00–16:00" />
+            </div>
+          </div>
+          <h4 style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 600 }}>Сторінка «Про нас»</h4>
+          <div className="form-group">
+            <label className="form-label">Перший абзац</label>
+            <textarea className="form-textarea" style={{ minHeight: '90px' }} value={scForm.aboutText || ''} onChange={e => setScForm(p => ({ ...p, aboutText: e.target.value }))} placeholder="Головний опис підприємства..." />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Другий абзац</label>
+            <textarea className="form-textarea" style={{ minHeight: '90px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
+          </div>
+          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+            {scSaving ? 'Збереження...' : 'Зберегти контент'}
+          </button>
+        </form>
       </div>
 
       {/* Admins */}

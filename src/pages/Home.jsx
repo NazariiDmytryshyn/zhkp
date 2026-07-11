@@ -1,136 +1,274 @@
 import { Link } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
 
-function ZapIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-    </svg>
-  );
+/* ─── Hooks ──────────────────────────────────────────────── */
+function useInView() {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } },
+      { threshold: 0, rootMargin: '0px 0px 100px 0px' }
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView];
 }
 
-function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-    </svg>
-  );
+function useCounter(target, inView, duration = 1800) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let raf;
+    const start = performance.now();
+    const tick = (now) => {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setVal(Math.floor(ease * target));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, target, duration]);
+  return val;
 }
 
-function ImageIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <polyline points="21 15 16 10 5 21"/>
-    </svg>
-  );
-}
+/* ─── Icons ──────────────────────────────────────────────── */
+const Icon = {
+  zap:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  bell:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  image:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  shield:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  clock:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  users:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  star:     <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  arrow:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+  check:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  wrench:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>,
+};
 
 function formatDate(ts) {
   if (!ts) return '';
   return new Date(ts).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function Home({ news, gallery }) {
+/* ─── Animated counter ───────────────────────────────────── */
+function StatCounter({ value, suffix = '', label, inView }) {
+  const count = useCounter(value, inView);
   return (
-    <section className="page page-home">
+    <div className="home-stat">
+      <div className="home-stat-value">{count.toLocaleString('uk-UA')}{suffix}</div>
+      <div className="home-stat-label">{label}</div>
+    </div>
+  );
+}
 
-      {/* Hero */}
-      <div className="hero">
-        <span className="hero-eyebrow">Житлово-Комунальне Підприємство</span>
-        <h2 className="hero-title">Сучасний сервіс<br />для вашого будинку</h2>
-        <p className="hero-desc">
-          Підтримка мешканців, оперативне реагування на заявки, актуальні новини
-          та прозора інформація про роботи у вашому районі.
-        </p>
-        <div className="hero-actions">
-          <Link to="/request" className="btn btn-white">Залишити заявку</Link>
-          <Link to="/about" className="btn btn-outline">Дізнатися більше</Link>
+/* ─── Home ───────────────────────────────────────────────── */
+function Home({ news, gallery }) {
+  const [statsRef, statsInView] = useInView();
+  const [featRef, featInView]   = useInView();
+  const [stepsRef, stepsInView] = useInView();
+  const [newsRef, newsInView]   = useInView();
+  const [gallRef, gallInView]   = useInView();
+  const [ctaRef, ctaInView]     = useInView();
+
+  return (
+    <div className="home-wrap">
+
+      {/* ── Hero ── */}
+      <section className="home-hero">
+        <div className="home-hero-bg">
+          <div className="home-hero-orb home-hero-orb-1" />
+          <div className="home-hero-orb home-hero-orb-2" />
+          <div className="home-hero-orb home-hero-orb-3" />
+          <div className="home-hero-grid" />
         </div>
-        <div className="hero-stats">
-          <div>
-            <div className="hero-stat-value">50+</div>
-            <div className="hero-stat-label">будинків</div>
+        <div className="home-hero-content">
+          <span className="home-hero-eyebrow">ПП «Наш Дім» — Тернопіль</span>
+          <h1 className="home-hero-title">
+            Сучасний сервіс<br />
+            <span className="home-hero-title-accent">для вашого будинку</span>
+          </h1>
+          <p className="home-hero-desc">
+            Підтримка мешканців, оперативне реагування на заявки,<br className="home-hero-br" />
+            актуальні новини та прозора інформація про роботи у вашому районі.
+          </p>
+          <div className="home-hero-actions">
+            <Link to="/request" className="btn home-btn-primary">
+              Залишити заявку {Icon.arrow}
+            </Link>
+            <Link to="/about" className="btn home-btn-ghost">
+              Про підприємство
+            </Link>
           </div>
-          <div>
-            <div className="hero-stat-value">5 000+</div>
-            <div className="hero-stat-label">мешканців</div>
-          </div>
-          <div>
-            <div className="hero-stat-value">15</div>
-            <div className="hero-stat-label">років досвіду</div>
-          </div>
-          <div>
-            <div className="hero-stat-value">24/7</div>
-            <div className="hero-stat-label">підтримка</div>
+          <div className="home-hero-badges">
+            <span className="home-hero-badge">{Icon.check} З 2000 року</span>
+            <span className="home-hero-badge">{Icon.check} 24/7 аварійна служба</span>
+            <span className="home-hero-badge">{Icon.check} Понад 50 будинків</span>
           </div>
         </div>
-      </div>
-
-      {/* Features */}
-      <div className="features-grid">
-        <article className="feature-card">
-          <div className="feature-icon blue"><ZapIcon /></div>
-          <h3>Швидкі заявки</h3>
-          <p>Оформляйте проблеми легко та зручно. Ми отримуємо і обробляємо заявки миттєво та реагуємо першочергово.</p>
-        </article>
-        <article className="feature-card">
-          <div className="feature-icon green"><BellIcon /></div>
-          <h3>Актуальні новини</h3>
-          <p>Всі важливі оголошення, графіки відключень та оновлення інфраструктури у зручному форматі.</p>
-        </article>
-        <article className="feature-card">
-          <div className="feature-icon amber"><ImageIcon /></div>
-          <h3>Галерея робіт</h3>
-          <p>Оцінюйте результати ремонтів та стан прибудинкової території. Прозорість нашої роботи.</p>
-        </article>
-      </div>
-
-      {/* News preview */}
-      {news.length > 0 && (
-        <section className="section-preview">
-          <div className="section-header">
+        <div className="home-hero-img-wrap">
+          <img
+            className="home-hero-img"
+            src="https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80"
+            alt="Сучасний будинок"
+          />
+          <div className="home-hero-img-card home-hero-img-card-1">
+            <div className="home-hero-img-card-icon">{Icon.zap}</div>
             <div>
-              <h3>Останні новини</h3>
+              <div className="home-hero-img-card-val">~2 год</div>
+              <div className="home-hero-img-card-lbl">час реагування</div>
             </div>
-            <Link to="/news">Всі новини →</Link>
           </div>
-          <div className="card-grid">
-            {news.slice(0, 3).map((item) => (
-              <article key={item.id} className="news-card">
-                {item.image && <img className="news-card-img" src={item.image} alt={item.title} />}
-                <div className="news-card-body">
-                  {item.createdAt && <div className="news-card-date">{formatDate(item.createdAt)}</div>}
+          <div className="home-hero-img-card home-hero-img-card-2">
+            <div className="home-hero-img-card-icon">{Icon.star}</div>
+            <div>
+              <div className="home-hero-img-card-val">4.9 / 5</div>
+              <div className="home-hero-img-card-lbl">оцінка мешканців</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats ── */}
+      <section className="home-stats-wrap" ref={statsRef}>
+        <div className="home-stats">
+          <StatCounter value={50}   suffix="+"  label="будинків під управлінням" inView={statsInView} />
+          <StatCounter value={5000} suffix="+"  label="мешканців обслуговуємо"   inView={statsInView} />
+          <StatCounter value={25}   suffix=""   label="років на ринку"            inView={statsInView} />
+          <StatCounter value={98}   suffix="%"  label="задоволених мешканців"     inView={statsInView} />
+        </div>
+      </section>
+
+      {/* ── Features ── */}
+      <section className="home-section" ref={featRef}>
+        <div className={`home-section-header anim-up${featInView ? ' visible' : ''}`}>
+          <p className="home-section-eyebrow">Переваги</p>
+          <h2 className="home-section-title">Чому обирають нас</h2>
+          <p className="home-section-sub">Ми не просто обслуговуємо будинки — ми піклуємось про комфорт кожного мешканця</p>
+        </div>
+        <div className="home-features-grid">
+          {[
+            { icon: Icon.zap,    color: 'blue',   title: 'Швидкі заявки',      delay: 0,   text: 'Оформляйте проблеми легко та зручно. Реагуємо першочергово і тримаємо вас в курсі.' },
+            { icon: Icon.shield, color: 'green',  title: 'Надійність',          delay: 100, text: 'Досвідчена команда фахівців та перевірені підрядники. Якість гарантована.' },
+            { icon: Icon.bell,   color: 'amber',  title: 'Актуальні новини',    delay: 200, text: 'Всі важливі оголошення, графіки відключень та оновлення у зручному форматі.' },
+            { icon: Icon.clock,  color: 'purple', title: 'Аварійна служба',     delay: 0,   text: 'Цілодобова служба реагування на аварійні ситуації — сантехніка, електрика.' },
+            { icon: Icon.users,  color: 'cyan',   title: 'Для мешканців',       delay: 100, text: 'Зручний онлайн-сервіс: заявки, новини та галерея завершених робіт.' },
+            { icon: Icon.image,  color: 'amber',  title: 'Прозорість',          delay: 200, text: 'Галерея виконаних робіт та звіти — ви бачите результат кожного виклику.' },
+          ].map((f, i) => (
+            <article
+              key={i}
+              className={`home-feature-card anim-up${featInView ? ' visible' : ''}`}
+              style={{ transitionDelay: `${f.delay}ms` }}
+            >
+              <div className={`home-feature-icon feature-icon ${f.color}`}>{f.icon}</div>
+              <h3>{f.title}</h3>
+              <p>{f.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="home-section home-steps-section" ref={stepsRef}>
+        <div className={`home-section-header anim-up${stepsInView ? ' visible' : ''}`}>
+          <p className="home-section-eyebrow">Процес</p>
+          <h2 className="home-section-title">Як це працює</h2>
+          <p className="home-section-sub">Три прості кроки від проблеми до рішення</p>
+        </div>
+        <div className="home-steps">
+          {[
+            { n: '01', title: 'Залишаєте заявку',    text: 'Заповніть просту форму онлайн або зателефонуйте нам. Вкажіть адресу та опис проблеми.',      icon: Icon.wrench },
+            { n: '02', title: 'Ми реагуємо',         text: 'Отримуємо заявку, призначаємо фахівця та повідомляємо вас про очікуваний час приїзду.',       icon: Icon.clock  },
+            { n: '03', title: 'Проблему вирішено',   text: 'Фахівець усуває несправність. Ви отримуєте підтвердження та можете оцінити якість роботи.',   icon: Icon.check  },
+          ].map((s, i) => (
+            <div
+              key={i}
+              className={`home-step anim-up${stepsInView ? ' visible' : ''}`}
+              style={{ transitionDelay: `${i * 150}ms` }}
+            >
+              <div className="home-step-num">{s.n}</div>
+              <div className="home-step-icon">{s.icon}</div>
+              <h3>{s.title}</h3>
+              <p>{s.text}</p>
+              {i < 2 && <div className="home-step-arrow">{Icon.arrow}</div>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── News ── */}
+      {news.length > 0 && (
+        <section className="home-section" ref={newsRef}>
+          <div className={`home-section-header anim-up${newsInView ? ' visible' : ''}`}>
+            <p className="home-section-eyebrow">Новини</p>
+            <h2 className="home-section-title">Останні новини</h2>
+          </div>
+          <div className="home-news-grid">
+            {news.slice(0, 3).map((item, i) => (
+              <article
+                key={item.id}
+                className={`home-news-card anim-up${newsInView ? ' visible' : ''}`}
+                style={{ transitionDelay: `${i * 100}ms` }}
+              >
+                {item.image && (
+                  <div className="home-news-img-wrap">
+                    <img src={item.image} alt={item.title} />
+                  </div>
+                )}
+                <div className="home-news-body">
+                  {item.createdAt && <div className="home-news-date">{formatDate(item.createdAt)}</div>}
                   <h4>{item.title}</h4>
                   <p>{item.summary}</p>
                 </div>
               </article>
             ))}
           </div>
+          <div className="home-section-more">
+            <Link to="/news" className="btn home-btn-outline">Всі новини {Icon.arrow}</Link>
+          </div>
         </section>
       )}
 
-      {/* Gallery preview */}
+      {/* ── Gallery ── */}
       {gallery.length > 0 && (
-        <section className="section-preview">
-          <div className="section-header">
-            <div>
-              <h3>Останні фото</h3>
-            </div>
-            <Link to="/gallery">Всі фото →</Link>
+        <section className="home-section" ref={gallRef}>
+          <div className={`home-section-header anim-up${gallInView ? ' visible' : ''}`}>
+            <p className="home-section-eyebrow">Галерея</p>
+            <h2 className="home-section-title">Наші роботи</h2>
           </div>
-          <div className="gallery-grid">
-            {gallery.slice(0, 6).map((item) => (
-              <div key={item.id} className="gallery-thumb">
-                <img src={item.url} alt={`Галерея ${item.id}`} />
+          <div className="home-gallery-grid">
+            {gallery.slice(0, 6).map((item, i) => (
+              <div
+                key={item.id}
+                className={`home-gallery-item anim-up${gallInView ? ' visible' : ''}`}
+                style={{ transitionDelay: `${i * 60}ms` }}
+              >
+                <img src={item.url} alt={`Фото ${item.id}`} />
               </div>
             ))}
           </div>
+          <div className="home-section-more">
+            <Link to="/gallery" className="btn home-btn-outline">Вся галерея {Icon.arrow}</Link>
+          </div>
         </section>
       )}
 
-    </section>
+      {/* ── CTA ── */}
+      <section className="home-cta" ref={ctaRef}>
+        <div className="home-cta-orb home-cta-orb-1" />
+        <div className="home-cta-orb home-cta-orb-2" />
+        <div className={`home-cta-content anim-up${ctaInView ? ' visible' : ''}`}>
+          <h2>Маєте проблему в будинку?</h2>
+          <p>Залиште заявку онлайн — наш фахівець зв'яжеться з вами найближчим часом</p>
+          <Link to="/request" className="btn home-btn-primary">
+            Залишити заявку {Icon.arrow}
+          </Link>
+        </div>
+      </section>
+
+    </div>
   );
 }
 

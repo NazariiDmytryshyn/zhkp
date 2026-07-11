@@ -108,6 +108,18 @@ const defaultData = {
     },
   ],
   serviceRequests: [],
+  siteContent: {
+    companyName: 'ПП "Наш Дім"',
+    tagline: 'Онлайн сервіс підтримки мешканців',
+    address: 'вул. Клима Савури, 3, м. Тернопіль, 46022',
+    phone: '+380 (352) 24-34-75',
+    email: 'info@nashdim-te.at.ua',
+    hours: 'Пн–Чт: 8:00–17:15, Пт: 8:00–16:00',
+    director: 'Дмитришин Анатолій Євгенович',
+    founded: '2000',
+    aboutText: 'Приватне підприємство "Наш Дім" — житлово-комунальне підприємство міста Тернопіль, зареєстроване у 2000 році. Підприємство забезпечує технічне обслуговування та управління житловим фондом, утримання будинків та прибудинкових територій. Керівник: Дмитришин Анатолій Євгенович.',
+    aboutText2: 'Ми обслуговуємо житловий фонд через дочірні підприємства ДП "Наш Дім-2" та ДП "Наш Дім-3". Наша мета — швидко реагувати на заявки мешканців, підтримувати будівлі та прибудинкову територію в належному стані, надавати прозору інформацію про заплановані та виконані роботи.',
+  },
   admins: [
     {
       id: 1,
@@ -151,7 +163,14 @@ function requireSuperadmin(req, res, next) {
 
 app.get('/api/site', async (req, res) => {
   const data = await loadData();
-  res.json({ logo: data.logo, news: data.news, gallery: data.gallery, services: data.services || [] });
+  res.json({ logo: data.logo, news: data.news, gallery: data.gallery, services: data.services || [], siteContent: data.siteContent || {} });
+});
+
+app.put('/api/admin/site-content', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  data.siteContent = { ...(data.siteContent || {}), ...req.body };
+  await saveData(data);
+  res.json({ ok: true });
 });
 
 app.post('/api/request', async (req, res) => {

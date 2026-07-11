@@ -157,7 +157,7 @@ const services = [
   },
 ];
 
-const contacts = [
+const defaultContacts = [
   {
     color: "blue",
     label: "Адреса",
@@ -223,29 +223,64 @@ const contacts = [
   },
 ];
 
-function About() {
+function About({ siteContent = {} }) {
+  const contacts = [
+    {
+      color: "blue",
+      label: "Адреса",
+      value: siteContent.address || defaultContacts[0].value,
+      icon: defaultContacts[0].icon,
+    },
+    {
+      color: "green",
+      label: "Телефон",
+      value: siteContent.phone || defaultContacts[1].value,
+      icon: defaultContacts[1].icon,
+    },
+    {
+      color: "amber",
+      label: "Email",
+      value: siteContent.email || defaultContacts[2].value,
+      icon: defaultContacts[2].icon,
+    },
+    {
+      color: "purple",
+      label: "Режим роботи",
+      value: siteContent.hours || defaultContacts[3].value,
+      icon: defaultContacts[3].icon,
+    },
+  ];
+
   return (
     <section className="page page-about">
       <div className="section-header">
         <div>
           <h2>Про наше підприємство</h2>
-          <p>Обслуговування житлового фонду міста Тернопіль з 2000 року</p>
+          <p>Обслуговування житлового фонду міста Тернопіль {siteContent.founded ? `з ${siteContent.founded} року` : 'з 2000 року'}</p>
         </div>
       </div>
 
       <div className="content-block">
-        <p>
-          Приватне підприємство "Наш Дім" — житлово-комунальне підприємство міста Тернопіль,
-          зареєстроване у 2000 році. Підприємство забезпечує технічне обслуговування та
-          управління житловим фондом, утримання будинків та прибудинкових територій.
-          Керівник: Дмитришин Анатолій Євгенович.
-        </p>
-        <p>
-          Ми обслуговуємо житловий фонд через дочірні підприємства ДП "Наш Дім-2" та
-          ДП "Наш Дім-3". Наша мета — швидко реагувати на заявки мешканців,
-          підтримувати будівлі та прибудинкову територію в належному стані,
-          надавати прозору інформацію про заплановані та виконані роботи.
-        </p>
+        {siteContent.aboutText ? (
+          <p>{siteContent.aboutText}</p>
+        ) : (
+          <p>
+            Приватне підприємство "Наш Дім" — житлово-комунальне підприємство міста Тернопіль,
+            зареєстроване у 2000 році. Підприємство забезпечує технічне обслуговування та
+            управління житловим фондом, утримання будинків та прибудинкових територій.
+            {siteContent.director ? ` Керівник: ${siteContent.director}.` : ' Керівник: Дмитришин Анатолій Євгенович.'}
+          </p>
+        )}
+        {siteContent.aboutText2 ? (
+          <p>{siteContent.aboutText2}</p>
+        ) : (
+          <p>
+            Ми обслуговуємо житловий фонд через дочірні підприємства ДП "Наш Дім-2" та
+            ДП "Наш Дім-3". Наша мета — швидко реагувати на заявки мешканців,
+            підтримувати будівлі та прибудинкову територію в належному стані,
+            надавати прозору інформацію про заплановані та виконані роботи.
+          </p>
+        )}
       </div>
 
       {/* Values */}
