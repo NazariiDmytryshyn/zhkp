@@ -11,9 +11,9 @@ server/data.json
 server/uploads/
 
 # Environment
-.env
 .env.local
 .env.*.local
+.env
 
 # OS
 .DS_Store
