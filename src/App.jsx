@@ -6,6 +6,9 @@ import News from './pages/News.jsx';
 import Gallery from './pages/Gallery.jsx';
 import Request from './pages/Request.jsx';
 import Services from './pages/Services.jsx';
+import Tariffs from './pages/Tariffs.jsx';
+import Emergency from './pages/Emergency.jsx';
+import Documents from './pages/Documents.jsx';
 import Admin from './pages/Admin.jsx';
 import WidgetRequest from './components/WidgetRequest.jsx';
 import * as api from './api/zhkpApi.js';
@@ -24,6 +27,9 @@ function App() {
   const [gallery, setGallery] = useState([]);
   const [services, setServices] = useState([]);
   const [siteContent, setSiteContent] = useState({});
+  const [tariffs, setTariffs] = useState([]);
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +45,9 @@ function App() {
         setGallery(site.gallery || []);
         setServices(site.services || []);
         setSiteContent(site.siteContent || {});
+        setTariffs(site.tariffs || []);
+        setEmergencyContacts(site.emergencyContacts || []);
+        setDocuments(site.documents || []);
       } catch (error) {
         console.error('Не вдалося завантажити сайт:', error);
       }
@@ -86,6 +95,9 @@ function App() {
               <NavLink {...activeLink} to="/news" onClick={() => setMobileOpen(false)}>Новини</NavLink>
               <NavLink {...activeLink} to="/gallery" onClick={() => setMobileOpen(false)}>Галерея</NavLink>
               <NavLink {...activeLink} to="/services" onClick={() => setMobileOpen(false)}>Послуги</NavLink>
+              <NavLink {...activeLink} to="/tariffs" onClick={() => setMobileOpen(false)}>Тарифи</NavLink>
+              <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійні контакти</NavLink>
+              {documents.length > 0 && <NavLink {...activeLink} to="/documents" onClick={() => setMobileOpen(false)}>Документи</NavLink>}
               <NavLink {...activeLink} to="/request" onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>
             </nav>
           </div>
@@ -106,6 +118,9 @@ function App() {
             <Route path="/news" element={<News news={news} />} />
             <Route path="/gallery" element={<Gallery gallery={gallery} />} />
             <Route path="/services" element={<Services services={services} />} />
+            <Route path="/tariffs" element={<Tariffs tariffs={tariffs} />} />
+            <Route path="/emergency" element={<Emergency emergencyContacts={emergencyContacts} />} />
+            <Route path="/documents" element={<Documents documents={documents} />} />
             <Route path="/request" element={<Request onSubmit={addRequest} />} />
           </Routes>
         </main>
@@ -131,6 +146,9 @@ function App() {
                 <li><Link to="/about">Про нас</Link></li>
                 <li><Link to="/news">Новини</Link></li>
                 <li><Link to="/gallery">Галерея</Link></li>
+                <li><Link to="/tariffs">Тарифи</Link></li>
+                <li><Link to="/emergency">Аварійні контакти</Link></li>
+                {documents.length > 0 && <li><Link to="/documents">Документи</Link></li>}
                 <li><Link to="/request">Залишити заявку</Link></li>
               </ul>
             </div>

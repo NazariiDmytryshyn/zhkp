@@ -1590,6 +1590,10 @@ a { color: inherit; text-decoration: none; }
   background: var(--slate-900);
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .admin-brand {
@@ -1634,6 +1638,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  overflow-y: auto;
 }
 
 .admin-nav-item {
@@ -1680,6 +1685,7 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
+  flex-shrink: 0;
 }
 
 .admin-user-info {
@@ -2771,4 +2777,397 @@ a { color: inherit; text-decoration: none; }
   .stats-grid          { grid-template-columns: 1fr; }
   .brand-text p        { display: none; }
   .card-grid           { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════
+   TARIFFS PAGE
+═══════════════════════════════════════════════ */
+.page-tariffs { max-width: 860px; }
+
+.tariff-card {
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.tariff-category {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--blue-700);
+  background: var(--blue-50);
+  padding: 0.875rem 1.25rem;
+  margin: 0;
+  border-bottom: 1px solid var(--blue-100);
+}
+
+.tariff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.tariff-table th {
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--slate-500);
+  background: var(--slate-50);
+  padding: 0.625rem 1.25rem;
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.tariff-table td {
+  padding: 0.75rem 1.25rem;
+  color: var(--slate-700);
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.tariff-table tr:last-child td { border-bottom: none; }
+.tariff-table tr:hover td { background: var(--slate-50); }
+
+.tariff-price {
+  font-weight: 600;
+  color: var(--blue-700);
+  white-space: nowrap;
+}
+
+.tariff-unit {
+  color: var(--slate-500);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.tariff-note {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--slate-200);
+  margin-top: 0.5rem;
+}
+
+/* ═══════════════════════════════════════════════
+   EMERGENCY PAGE
+═══════════════════════════════════════════════ */
+.emergency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.emergency-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--slate-200);
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.emergency-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.emergency-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.emergency-card-icon svg { width: 22px; height: 22px; }
+
+.emergency-card-blue  .emergency-card-icon { background: var(--blue-100);   color: var(--blue-600); }
+.emergency-card-amber .emergency-card-icon { background: #fef3c7;           color: #d97706; }
+.emergency-card-green .emergency-card-icon { background: #dcfce7;           color: #16a34a; }
+.emergency-card-purple .emergency-card-icon { background: #f3e8ff;          color: #9333ea; }
+.emergency-card-cyan  .emergency-card-icon { background: #e0f2fe;           color: #0284c7; }
+.emergency-card-red   .emergency-card-icon { background: #fee2e2;           color: #dc2626; }
+
+.emergency-card-body { flex: 1; min-width: 0; }
+
+.emergency-card-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--slate-800);
+  margin-bottom: 0.375rem;
+}
+
+.emergency-card-phone {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--blue-700);
+  text-decoration: none;
+  margin-bottom: 0.375rem;
+  letter-spacing: 0.01em;
+}
+
+.emergency-card-phone:hover { color: var(--blue-800); text-decoration: underline; }
+
+.emergency-card-desc {
+  font-size: 0.875rem;
+  color: var(--slate-500);
+  margin: 0.25rem 0;
+}
+
+.emergency-card-hours {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+  margin-top: 0.375rem;
+}
+.emergency-card-hours svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+.emergency-note {
+  font-size: 0.9375rem;
+  color: var(--slate-700);
+  border-top: 1px solid var(--slate-200);
+  padding-top: 1.25rem;
+}
+
+/* ═══════════════════════════════════════════════
+   DOCUMENTS PAGE
+═══════════════════════════════════════════════ */
+.documents-list {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.document-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.18s, border-color 0.18s, background 0.18s;
+  box-shadow: var(--shadow-sm);
+}
+
+.document-item:hover {
+  border-color: var(--blue-300);
+  box-shadow: var(--shadow-md);
+  background: var(--blue-50);
+}
+
+.document-ext {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.document-ext-red    { background: #fee2e2; color: #dc2626; }
+.document-ext-blue   { background: var(--blue-100); color: var(--blue-700); }
+.document-ext-green  { background: #dcfce7; color: #16a34a; }
+
+.document-info { flex: 1; min-width: 0; }
+
+.document-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--slate-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.document-meta {
+  display: flex;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+  margin-top: 0.25rem;
+}
+
+.document-download {
+  color: var(--slate-400);
+  flex-shrink: 0;
+}
+.document-download svg { width: 18px; height: 18px; display: block; }
+.document-item:hover .document-download { color: var(--blue-500); }
+
+/* ═══════════════════════════════════════════════
+   ADMIN — TARIFFS
+═══════════════════════════════════════════════ */
+.tariff-admin-category {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--blue-600);
+  background: var(--blue-50);
+  padding: 0.5rem 1.5rem;
+  border-top: 1px solid var(--slate-100);
+  border-bottom: 1px solid var(--blue-100);
+}
+
+.tariff-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--slate-100);
+  transition: background 0.15s;
+}
+
+.tariff-admin-row:hover { background: var(--slate-50); }
+.tariff-admin-row:last-child { border-bottom: none; }
+
+.tariff-admin-name { flex: 1; font-size: 0.9375rem; color: var(--slate-700); }
+
+.tariff-admin-price {
+  font-weight: 600;
+  color: var(--blue-700);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — EMERGENCY CONTACTS
+═══════════════════════════════════════════════ */
+.ec-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid var(--slate-100);
+  transition: background 0.15s;
+}
+
+.ec-admin-row:hover { background: var(--slate-50); }
+.ec-admin-row:last-child { border-bottom: none; }
+
+.ec-admin-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ec-admin-name {
+  font-weight: 600;
+  color: var(--slate-800);
+  font-size: 0.9375rem;
+}
+
+.ec-admin-phone {
+  color: var(--blue-600);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.ec-admin-phone:hover { text-decoration: underline; }
+
+.ec-admin-hours {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+  background: var(--slate-100);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ec-admin-desc {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--slate-500);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN — DOCUMENTS
+═══════════════════════════════════════════════ */
+.doc-admin-list { display: grid; gap: 0; }
+
+.doc-admin-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid var(--slate-100);
+  transition: background 0.15s;
+}
+
+.doc-admin-item:hover { background: var(--slate-50); }
+.doc-admin-item:last-child { border-bottom: none; }
+
+.doc-admin-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.doc-admin-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--blue-50);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-500);
+  flex-shrink: 0;
+}
+.doc-admin-icon svg { width: 18px; height: 18px; }
+
+.doc-admin-info { min-width: 0; }
+
+.doc-admin-name {
+  display: block;
+  font-weight: 500;
+  color: var(--slate-800);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-admin-link:hover .doc-admin-name { color: var(--blue-600); }
+
+.doc-admin-meta {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+}
+
+/* Icon.upload referenced in renderDocuments */
+.admin-add-form .file-drop-zone svg { margin: 0 auto; }
+
+@media (max-width: 768px) {
+  .emergency-grid { grid-template-columns: 1fr; }
+  .emergency-card { padding: 1.25rem; }
+  .tariff-table th,
+  .tariff-table td { padding: 0.625rem 0.875rem; font-size: 0.875rem; }
+  .ec-admin-row { flex-wrap: wrap; }
+  .ec-admin-desc { max-width: none; }
 }

@@ -169,4 +169,59 @@ export async function uploadFile(file, token) {
   return data.url;
 }
 
+/* ── Tariffs ── */
+export async function addTariff(payload, token) {
+  const result = await request('/admin/tariffs', { method: 'POST', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+export async function updateTariff(id, payload, token) {
+  const result = await request(`/admin/tariffs/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+export async function deleteTariff(id, token) {
+  const result = await request(`/admin/tariffs/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+/* ── Emergency Contacts ── */
+export async function addEmergencyContact(payload, token) {
+  const result = await request('/admin/emergency-contacts', { method: 'POST', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+export async function updateEmergencyContact(id, payload, token) {
+  const result = await request(`/admin/emergency-contacts/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+export async function deleteEmergencyContact(id, token) {
+  const result = await request(`/admin/emergency-contacts/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+/* ── Documents ── */
+export async function uploadDocument(file, name, token) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (name) formData.append('name', name);
+  const response = await fetch('/api/admin/documents', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data?.error || 'Помилка завантаження документу');
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return data.doc;
+}
+export async function deleteDocument(id, token) {
+  const result = await request(`/admin/documents/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
 export { getToken, saveToken, clearToken };

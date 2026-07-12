@@ -37,6 +37,22 @@ const upload = multer({
   },
 });
 
+const docMimeTypes = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
+const uploadDoc = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (docMimeTypes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Дозволені формати: PDF, DOC, DOCX, XLS, XLSX'));
+  },
+});
+
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadsPath));
@@ -108,6 +124,21 @@ const defaultData = {
     },
   ],
   serviceRequests: [],
+  tariffs: [
+    { id: 1, category: 'Утримання будинку', name: 'Технічне обслуговування', price: '4.80', unit: 'м²/міс' },
+    { id: 2, category: 'Утримання будинку', name: 'Прибирання прибудинкової території', price: '1.20', unit: 'м²/міс' },
+    { id: 3, category: 'Утримання будинку', name: 'Вивезення сміття', price: '0.80', unit: 'м²/міс' },
+    { id: 4, category: 'Водопостачання', name: 'Холодна вода', price: '42.50', unit: 'м³' },
+    { id: 5, category: 'Водопостачання', name: 'Водовідведення', price: '28.30', unit: 'м³' },
+    { id: 6, category: 'Опалення', name: 'Опалення (сезон)', price: '38.00', unit: 'м²/міс' },
+  ],
+  emergencyContacts: [
+    { id: 1, name: 'Диспетчерська служба', phone: '+380 (352) 24-34-75', description: 'Прийом заявок, загальні питання', available: 'Пн–Пт: 8:00–17:00' },
+    { id: 2, name: 'Аварійна служба', phone: '+380 (352) 24-00-01', description: 'Аварії сантехніки та електрики', available: '24/7' },
+    { id: 3, name: 'Газова служба', phone: '104', description: 'Витік газу, аварії газопостачання', available: '24/7' },
+    { id: 4, name: 'Електромережі', phone: '105', description: 'Аварії електропостачання', available: '24/7' },
+  ],
+  documents: [],
   siteContent: {
     companyName: 'ПП "Наш Дім"',
     tagline: 'Онлайн сервіс підтримки мешканців',
@@ -163,7 +194,16 @@ function requireSuperadmin(req, res, next) {
 
 app.get('/api/site', async (req, res) => {
   const data = await loadData();
-  res.json({ logo: data.logo, news: data.news, gallery: data.gallery, services: data.services || [], siteContent: data.siteContent || {} });
+  res.json({
+    logo: data.logo,
+    news: data.news,
+    gallery: data.gallery,
+    services: data.services || [],
+    siteContent: data.siteContent || {},
+    tariffs: data.tariffs || [],
+    emergencyContacts: data.emergencyContacts || [],
+    documents: data.documents || [],
+  });
 });
 
 app.put('/api/admin/site-content', authMiddleware, requireSuperadmin, async (req, res) => {
@@ -405,6 +445,89 @@ app.delete('/api/admin/services/:id', authMiddleware, requireSuperadmin, async (
 app.post('/api/admin/upload', authMiddleware, requireSuperadmin, upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
   res.json({ url: `/uploads/${req.file.filename}` });
+});
+
+/* ── Tariffs ── */
+app.post('/api/admin/tariffs', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  if (!data.tariffs) data.tariffs = [];
+  const tariff = { id: Date.now(), ...req.body };
+  data.tariffs.push(tariff);
+  await saveData(data);
+  res.json({ tariff });
+});
+
+app.put('/api/admin/tariffs/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.tariffs || []).findIndex(t => t.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Тариф не знайдено' });
+  data.tariffs[idx] = { ...data.tariffs[idx], ...req.body, id: data.tariffs[idx].id };
+  await saveData(data);
+  res.json({ tariff: data.tariffs[idx] });
+});
+
+app.delete('/api/admin/tariffs/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.tariffs || []).findIndex(t => t.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Тариф не знайдено' });
+  data.tariffs.splice(idx, 1);
+  await saveData(data);
+  res.json({ ok: true });
+});
+
+/* ── Emergency Contacts ── */
+app.post('/api/admin/emergency-contacts', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  if (!data.emergencyContacts) data.emergencyContacts = [];
+  const contact = { id: Date.now(), ...req.body };
+  data.emergencyContacts.push(contact);
+  await saveData(data);
+  res.json({ contact });
+});
+
+app.put('/api/admin/emergency-contacts/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.emergencyContacts || []).findIndex(c => c.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Контакт не знайдено' });
+  data.emergencyContacts[idx] = { ...data.emergencyContacts[idx], ...req.body, id: data.emergencyContacts[idx].id };
+  await saveData(data);
+  res.json({ contact: data.emergencyContacts[idx] });
+});
+
+app.delete('/api/admin/emergency-contacts/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.emergencyContacts || []).findIndex(c => c.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Контакт не знайдено' });
+  data.emergencyContacts.splice(idx, 1);
+  await saveData(data);
+  res.json({ ok: true });
+});
+
+/* ── Documents ── */
+app.post('/api/admin/documents', authMiddleware, requireSuperadmin, uploadDoc.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
+  const data = await loadData();
+  if (!data.documents) data.documents = [];
+  const doc = {
+    id: Date.now(),
+    name: req.body.name || req.file.originalname,
+    originalName: req.file.originalname,
+    url: `/uploads/${req.file.filename}`,
+    size: req.file.size,
+    uploadedAt: new Date().toISOString(),
+  };
+  data.documents.push(doc);
+  await saveData(data);
+  res.json({ doc });
+});
+
+app.delete('/api/admin/documents/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  const idx = (data.documents || []).findIndex(d => d.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Документ не знайдено' });
+  data.documents.splice(idx, 1);
+  await saveData(data);
+  res.json({ ok: true });
 });
 
 app.use(express.static(distPath));

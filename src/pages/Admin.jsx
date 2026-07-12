@@ -24,6 +24,9 @@ const Icon = {
   edit:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   briefcase:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
   bell:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  tag:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+  phone:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.64 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>,
+  file:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -67,8 +70,28 @@ function Admin() {
   const [news, setNews]               = useState([]);
   const [gallery, setGallery]         = useState([]);
   const [admins, setAdmins]           = useState([]);
-  const [services, setServices]       = useState([]);
-  const [serviceReqs, setServiceReqs] = useState([]);
+  const [services, setServices]         = useState([]);
+  const [serviceReqs, setServiceReqs]   = useState([]);
+  const [tariffs, setTariffs]           = useState([]);
+  const [emergencyContacts, setEC]      = useState([]);
+  const [documents, setDocuments]       = useState([]);
+
+  /* tariffs */
+  const [showTariffForm, setShowTariffF]  = useState(false);
+  const [tariffForm, setTariffForm]       = useState({ category: '', name: '', price: '', unit: '' });
+  const [editTariffId, setEditTariffId]   = useState(null);
+  const [editTariffForm, setEditTariffF]  = useState({});
+
+  /* emergency contacts */
+  const [showECForm, setShowECForm]       = useState(false);
+  const [ecForm, setECForm]               = useState({ name: '', phone: '', description: '', available: '' });
+  const [editECId, setEditECId]           = useState(null);
+  const [editECForm, setEditECFormV]      = useState({});
+
+  /* documents */
+  const [docFile, setDocFile]             = useState(null);
+  const [docName, setDocName]             = useState('');
+  const [docUploading, setDocUploading]   = useState(false);
 
   /* services ui */
   const [serviceTab, setServiceTab]       = useState('catalog');
@@ -165,6 +188,9 @@ function Admin() {
       setNews(siteData.news || []);
       setGallery(siteData.gallery || []);
       setServices(siteData.services || []);
+      setTariffs(siteData.tariffs || []);
+      setEC(siteData.emergencyContacts || []);
+      setDocuments(siteData.documents || []);
       setLogoPreview(siteData.logo || '');
       const sc = siteData.siteContent || {};
       setSiteContent(sc);
@@ -431,6 +457,9 @@ function Admin() {
         { id: 'services',  label: 'Послуги',  icon: Icon.briefcase },
         { id: 'news',      label: 'Новини',   icon: Icon.news  },
         { id: 'gallery',   label: 'Галерея',  icon: Icon.image },
+        { id: 'tariffs',   label: 'Тарифи',   icon: Icon.tag   },
+        { id: 'emergency', label: 'Аварійні',  icon: Icon.phone },
+        { id: 'documents', label: 'Документи', icon: Icon.file  },
         ...(user.role === 'superadmin' ? [
           { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
           { id: 'settings', label: 'Налаштування', icon: Icon.settings },
@@ -974,6 +1003,338 @@ function Admin() {
     </div>
   );
 
+  /* ════════════════ TARIFFS ════════════════ */
+  const handleAddTariff = async (e) => {
+    e.preventDefault();
+    try {
+      await api.addTariff(tariffForm, token);
+      setTariffForm({ category: '', name: '', price: '', unit: '' });
+      setShowTariffF(false);
+      await refreshData();
+      showToast('Тариф додано');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleUpdateTariff = async (e, id) => {
+    e.preventDefault();
+    try {
+      await api.updateTariff(id, editTariffForm, token);
+      setEditTariffId(null);
+      await refreshData();
+      showToast('Тариф оновлено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleDeleteTariff = async (id) => {
+    if (!window.confirm('Видалити цей тариф?')) return;
+    try {
+      await api.deleteTariff(id, token);
+      await refreshData();
+      showToast('Тариф видалено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const renderTariffs = () => {
+    const categories = [...new Set(tariffs.map(t => t.category || 'Інше'))];
+    return (
+      <div style={{ display: 'grid', gap: '1.25rem' }}>
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3>Тарифи ({tariffs.length})</h3>
+            {user.role === 'superadmin' && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowTariffF(p => !p)}>
+                {Icon.plus} Додати тариф
+              </button>
+            )}
+          </div>
+
+          {showTariffForm && user.role === 'superadmin' && (
+            <form className="admin-add-form" onSubmit={handleAddTariff}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Категорія *</label>
+                  <input className="form-input" value={tariffForm.category} onChange={e => setTariffForm(p => ({ ...p, category: e.target.value }))} placeholder="Водопостачання" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Назва послуги *</label>
+                  <input className="form-input" value={tariffForm.name} onChange={e => setTariffForm(p => ({ ...p, name: e.target.value }))} placeholder="Холодна вода" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Ціна (грн) *</label>
+                  <input className="form-input" value={tariffForm.price} onChange={e => setTariffForm(p => ({ ...p, price: e.target.value }))} placeholder="42.50" required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Одиниця *</label>
+                  <input className="form-input" value={tariffForm.unit} onChange={e => setTariffForm(p => ({ ...p, unit: e.target.value }))} placeholder="м³" required />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.625rem' }}>
+                <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowTariffF(false)}>Скасувати</button>
+              </div>
+            </form>
+          )}
+
+          {tariffs.length === 0 ? (
+            <div className="empty-state">{Icon.tag}<p>Тарифів ще немає</p></div>
+          ) : (
+            categories.map(cat => (
+              <div key={cat}>
+                <div className="tariff-admin-category">{cat}</div>
+                {tariffs.filter(t => (t.category || 'Інше') === cat).map(t => (
+                  <div key={t.id}>
+                    {editTariffId === t.id ? (
+                      <form className="admin-add-form" style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--slate-100)' }} onSubmit={e => handleUpdateTariff(e, t.id)}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                          <div className="form-group">
+                            <label className="form-label">Категорія</label>
+                            <input className="form-input" value={editTariffForm.category} onChange={e => setEditTariffF(p => ({ ...p, category: e.target.value }))} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Назва</label>
+                            <input className="form-input" value={editTariffForm.name} onChange={e => setEditTariffF(p => ({ ...p, name: e.target.value }))} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Ціна (грн)</label>
+                            <input className="form-input" value={editTariffForm.price} onChange={e => setEditTariffF(p => ({ ...p, price: e.target.value }))} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Одиниця</label>
+                            <input className="form-input" value={editTariffForm.unit} onChange={e => setEditTariffF(p => ({ ...p, unit: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.625rem' }}>
+                          <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                          <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditTariffId(null)}>Скасувати</button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="tariff-admin-row">
+                        <span className="tariff-admin-name">{t.name}</span>
+                        <span className="tariff-admin-price">{t.price} грн / {t.unit}</span>
+                        {user.role === 'superadmin' && (
+                          <div style={{ display: 'flex', gap: '0.375rem', marginLeft: 'auto' }}>
+                            <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditTariffId(t.id); setEditTariffF({ ...t }); }}>{Icon.edit}</button>
+                            <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteTariff(t.id)}>{Icon.trash}</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ════════════════ EMERGENCY CONTACTS ════════════════ */
+  const handleAddEC = async (e) => {
+    e.preventDefault();
+    try {
+      await api.addEmergencyContact(ecForm, token);
+      setECForm({ name: '', phone: '', description: '', available: '' });
+      setShowECForm(false);
+      await refreshData();
+      showToast('Контакт додано');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleUpdateEC = async (e, id) => {
+    e.preventDefault();
+    try {
+      await api.updateEmergencyContact(id, editECForm, token);
+      setEditECId(null);
+      await refreshData();
+      showToast('Контакт оновлено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleDeleteEC = async (id) => {
+    if (!window.confirm('Видалити цей контакт?')) return;
+    try {
+      await api.deleteEmergencyContact(id, token);
+      await refreshData();
+      showToast('Контакт видалено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const renderEmergency = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Аварійні контакти ({emergencyContacts.length})</h3>
+          {user.role === 'superadmin' && (
+            <button className="btn btn-primary btn-sm" onClick={() => setShowECForm(p => !p)}>
+              {Icon.plus} Додати контакт
+            </button>
+          )}
+        </div>
+
+        {showECForm && user.role === 'superadmin' && (
+          <form className="admin-add-form" onSubmit={handleAddEC}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div className="form-group">
+                <label className="form-label">Назва служби *</label>
+                <input className="form-input" value={ecForm.name} onChange={e => setECForm(p => ({ ...p, name: e.target.value }))} placeholder="Аварійна служба" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Телефон *</label>
+                <input className="form-input" value={ecForm.phone} onChange={e => setECForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-00-00" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Опис</label>
+                <input className="form-input" value={ecForm.description} onChange={e => setECForm(p => ({ ...p, description: e.target.value }))} placeholder="Аварії сантехніки та електрики" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Режим роботи</label>
+                <input className="form-input" value={ecForm.available} onChange={e => setECForm(p => ({ ...p, available: e.target.value }))} placeholder="24/7" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.625rem' }}>
+              <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowECForm(false)}>Скасувати</button>
+            </div>
+          </form>
+        )}
+
+        {emergencyContacts.length === 0 ? (
+          <div className="empty-state">{Icon.phone}<p>Контактів ще немає</p></div>
+        ) : (
+          <div style={{ display: 'grid', gap: 0 }}>
+            {emergencyContacts.map(c => (
+              <div key={c.id}>
+                {editECId === c.id ? (
+                  <form className="admin-add-form" style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid var(--slate-100)' }} onSubmit={e => handleUpdateEC(e, c.id)}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                      <div className="form-group"><label className="form-label">Назва</label><input className="form-input" value={editECForm.name} onChange={e => setEditECFormV(p => ({ ...p, name: e.target.value }))} /></div>
+                      <div className="form-group"><label className="form-label">Телефон</label><input className="form-input" value={editECForm.phone} onChange={e => setEditECFormV(p => ({ ...p, phone: e.target.value }))} /></div>
+                      <div className="form-group"><label className="form-label">Опис</label><input className="form-input" value={editECForm.description} onChange={e => setEditECFormV(p => ({ ...p, description: e.target.value }))} /></div>
+                      <div className="form-group"><label className="form-label">Режим роботи</label><input className="form-input" value={editECForm.available} onChange={e => setEditECFormV(p => ({ ...p, available: e.target.value }))} /></div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.625rem' }}>
+                      <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditECId(null)}>Скасувати</button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="ec-admin-row">
+                    <div className="ec-admin-info">
+                      <span className="ec-admin-name">{c.name}</span>
+                      <a className="ec-admin-phone" href={`tel:${c.phone}`}>{c.phone}</a>
+                      {c.available && <span className="ec-admin-hours">{c.available}</span>}
+                    </div>
+                    {c.description && <span className="ec-admin-desc">{c.description}</span>}
+                    {user.role === 'superadmin' && (
+                      <div style={{ display: 'flex', gap: '0.375rem' }}>
+                        <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditECId(c.id); setEditECFormV({ ...c }); }}>{Icon.edit}</button>
+                        <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteEC(c.id)}>{Icon.trash}</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  /* ════════════════ DOCUMENTS ════════════════ */
+  const handleUploadDoc = async (e) => {
+    e.preventDefault();
+    if (!docFile) { showToast('Оберіть файл', 'error'); return; }
+    setDocUploading(true);
+    try {
+      await api.uploadDocument(docFile, docName || docFile.name, token);
+      setDocFile(null);
+      setDocName('');
+      await refreshData();
+      showToast('Документ завантажено');
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setDocUploading(false); }
+  };
+
+  const handleDeleteDoc = async (id) => {
+    if (!window.confirm('Видалити цей документ?')) return;
+    try {
+      await api.deleteDocument(id, token);
+      await refreshData();
+      showToast('Документ видалено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  function formatDocSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} КБ`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+  }
+
+  const renderDocuments = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Документи ({documents.length})</h3>
+        </div>
+
+        {user.role === 'superadmin' && (
+          <form className="admin-add-form" onSubmit={handleUploadDoc}>
+            <div className="form-group">
+              <label className="form-label">Назва документу (необов'язково)</label>
+              <input className="form-input" value={docName} onChange={e => setDocName(e.target.value)} placeholder="Договір управління 2026" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Файл *</label>
+              <label className={`file-drop-zone ${docFile ? 'has-file' : ''}`}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setDocFile(f); }}
+              >
+                <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) setDocFile(f); }} />
+                {docFile
+                  ? <><strong style={{ color: 'var(--blue-700)' }}>{docFile.name}</strong><small>{formatDocSize(docFile.size)}</small></>
+                  : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>PDF, DOC, DOCX, XLS, XLSX до 20 МБ</small></>
+                }
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '0.625rem' }}>
+              <button className="btn btn-primary btn-sm" type="submit" disabled={docUploading}>
+                {docUploading ? 'Завантаження...' : `${Icon.upload} Завантажити`}
+              </button>
+              {docFile && <button className="btn btn-ghost btn-sm" type="button" onClick={() => setDocFile(null)}>Скасувати</button>}
+            </div>
+          </form>
+        )}
+
+        {documents.length === 0 ? (
+          <div className="empty-state">{Icon.file}<p>Документів ще немає</p></div>
+        ) : (
+          <div className="doc-admin-list">
+            {documents.map(doc => (
+              <div key={doc.id} className="doc-admin-item">
+                <a href={doc.url} target="_blank" rel="noopener noreferrer" className="doc-admin-link">
+                  <div className="doc-admin-icon">{Icon.file}</div>
+                  <div className="doc-admin-info">
+                    <span className="doc-admin-name">{doc.name}</span>
+                    <span className="doc-admin-meta">
+                      {doc.originalName && doc.originalName !== doc.name && <span>{doc.originalName} · </span>}
+                      {formatDocSize(doc.size)}
+                    </span>
+                  </div>
+                </a>
+                {user.role === 'superadmin' && (
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteDoc(doc.id)}>{Icon.trash}</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   /* ════════════════ USERS ════════════════ */
   const renderUsers = () => (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -1239,6 +1600,9 @@ function Admin() {
           {activeSection === 'services'  && renderServices()}
           {activeSection === 'news'      && renderNews()}
           {activeSection === 'gallery'   && renderGallery()}
+          {activeSection === 'tariffs'   && renderTariffs()}
+          {activeSection === 'emergency' && renderEmergency()}
+          {activeSection === 'documents' && renderDocuments()}
           {activeSection === 'users'     && renderUsers()}
           {activeSection === 'settings'  && renderSettings()}
         </div>
