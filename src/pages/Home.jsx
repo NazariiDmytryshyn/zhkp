@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useRef, useState, useEffect, useCallback } from 'react';
+import Lightbox from '../components/Lightbox.jsx';
 
 /* ─── Hooks ──────────────────────────────────────────────── */
 function useInView() {
@@ -69,6 +70,9 @@ function StatCounter({ value, suffix = '', label, inView }) {
 
 /* ─── Home ───────────────────────────────────────────────── */
 function Home({ news, gallery }) {
+  const [lbIndex, setLbIndex] = useState(null);
+  const galleryUrls = gallery.slice(0, 6).map(item => item.url);
+
   const [statsRef, statsInView] = useInView();
   const [featRef, featInView]   = useInView();
   const [stepsRef, stepsInView] = useInView();
@@ -246,7 +250,8 @@ function Home({ news, gallery }) {
               <div
                 key={item.id}
                 className={`home-gallery-item anim-up${gallInView ? ' visible' : ''}`}
-                style={{ transitionDelay: `${i * 60}ms` }}
+                style={{ transitionDelay: `${i * 60}ms`, cursor: 'pointer' }}
+                onClick={() => setLbIndex(i)}
               >
                 <img src={item.url} alt={`Фото ${item.id}`} />
               </div>
@@ -256,6 +261,10 @@ function Home({ news, gallery }) {
             <Link to="/gallery" className="btn home-btn-outline">Вся галерея {Icon.arrow}</Link>
           </div>
         </section>
+      )}
+
+      {lbIndex !== null && (
+        <Lightbox images={galleryUrls} startIndex={lbIndex} onClose={() => setLbIndex(null)} />
       )}
 
       {/* ── CTA ── */}

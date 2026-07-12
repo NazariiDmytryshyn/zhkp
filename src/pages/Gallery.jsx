@@ -1,4 +1,10 @@
+import { useState } from 'react';
+import Lightbox from '../components/Lightbox.jsx';
+
 function Gallery({ gallery }) {
+  const [lbIndex, setLbIndex] = useState(null);
+  const urls = gallery.map(item => item.url);
+
   return (
     <section className="page page-gallery">
       <div className="section-header">
@@ -17,12 +23,16 @@ function Gallery({ gallery }) {
         </div>
       ) : (
         <div className="gallery-grid gallery-full">
-          {gallery.map((item) => (
-            <div key={item.id} className="gallery-thumb">
+          {gallery.map((item, i) => (
+            <div key={item.id} className="gallery-thumb" onClick={() => setLbIndex(i)}>
               <img src={item.url} alt={`Фото ${item.id}`} loading="lazy" />
             </div>
           ))}
         </div>
+      )}
+
+      {lbIndex !== null && (
+        <Lightbox images={urls} startIndex={lbIndex} onClose={() => setLbIndex(null)} />
       )}
     </section>
   );

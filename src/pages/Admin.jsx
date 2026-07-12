@@ -431,7 +431,10 @@ function Admin() {
         { id: 'services',  label: 'Послуги',  icon: Icon.briefcase },
         { id: 'news',      label: 'Новини',   icon: Icon.news  },
         { id: 'gallery',   label: 'Галерея',  icon: Icon.image },
-        ...(user.role === 'superadmin' ? [{ id: 'settings', label: 'Налаштування', icon: Icon.settings }] : []),
+        ...(user.role === 'superadmin' ? [
+          { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
+          { id: 'settings', label: 'Налаштування', icon: Icon.settings },
+        ] : []),
       ];
 
   const sectionTitle = navItems.find((n) => n.id === activeSection)?.label ?? '';
@@ -971,6 +974,68 @@ function Admin() {
     </div>
   );
 
+  /* ════════════════ USERS ════════════════ */
+  const renderUsers = () => (
+    <div style={{ display: 'grid', gap: '1.5rem' }}>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Адміністратори ({admins.length})</h3>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowAdminF((p) => !p)}>
+            {Icon.plus} Додати
+          </button>
+        </div>
+
+        {showAdminForm && (
+          <form className="admin-add-form" onSubmit={handleCreateAdmin}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div className="form-group">
+                <label className="form-label">Логін *</label>
+                <input className="form-input" value={newAdmin.username} onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Пароль *</label>
+                <input type="password" className="form-input" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} required />
+              </div>
+            </div>
+            <div className="form-group" style={{ maxWidth: 240 }}>
+              <label className="form-label">Роль</label>
+              <select className="form-select" value={newAdmin.role} onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })}>
+                <option value="worker">Тільки перегляд заявок</option>
+                <option value="viewer">Менеджер заявок</option>
+                <option value="superadmin">Повний доступ</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '0.625rem' }}>
+              <button className="btn btn-primary btn-sm" type="submit">Створити</button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowAdminF(false)}>Скасувати</button>
+            </div>
+          </form>
+        )}
+
+        {admins.length === 0 ? (
+          <div className="empty-state">{Icon.users}<p>Адміністраторів немає</p></div>
+        ) : (
+          <div className="admins-list">
+            {admins.map((a) => (
+              <div key={a.id} className="admin-list-item">
+                <div className="admin-avatar">{a.username[0].toUpperCase()}</div>
+                <div className="admin-list-name">{a.username}</div>
+                <span className={`admin-role-tag ${a.role}`}>
+                  {a.role === 'superadmin' ? 'Суперадмін' : a.role === 'viewer' ? 'Менеджер' : 'Працівник'}
+                </span>
+                {a.id !== 1 && (
+                  <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteAdmin(a.id)} title="Видалити">
+                    {Icon.trash}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   /* ════════════════ SETTINGS ════════════════ */
   const renderSettings = () => (
     <div style={{ display: 'grid', gap: '1.5rem' }}>
@@ -1080,63 +1145,6 @@ function Admin() {
         </form>
       </div>
 
-      {/* Admins */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3>Адміністратори ({admins.length})</h3>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAdminF((p) => !p)}>
-            {Icon.plus} Додати
-          </button>
-        </div>
-
-        {showAdminForm && (
-          <form className="admin-add-form" onSubmit={handleCreateAdmin}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-              <div className="form-group">
-                <label className="form-label">Логін *</label>
-                <input className="form-input" value={newAdmin.username} onChange={(e) => setNewAdmin({ ...newAdmin, username: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Пароль *</label>
-                <input type="password" className="form-input" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} required />
-              </div>
-            </div>
-            <div className="form-group" style={{ maxWidth: 240 }}>
-              <label className="form-label">Роль</label>
-              <select className="form-select" value={newAdmin.role} onChange={(e) => setNewAdmin({ ...newAdmin, role: e.target.value })}>
-                <option value="worker">Тільки перегляд заявок</option>
-                <option value="viewer">Менеджер заявок</option>
-                <option value="superadmin">Повний доступ</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '0.625rem' }}>
-              <button className="btn btn-primary btn-sm" type="submit">Створити</button>
-              <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowAdminF(false)}>Скасувати</button>
-            </div>
-          </form>
-        )}
-
-        {admins.length === 0 ? (
-          <div className="empty-state">{Icon.users}<p>Адміністраторів немає</p></div>
-        ) : (
-          <div className="admins-list">
-            {admins.map((a) => (
-              <div key={a.id} className="admin-list-item">
-                <div className="admin-avatar">{a.username[0].toUpperCase()}</div>
-                <div className="admin-list-name">{a.username}</div>
-                <span className={`admin-role-tag ${a.role}`}>
-                  {a.role === 'superadmin' ? 'Суперадмін' : a.role === 'viewer' ? 'Менеджер' : 'Працівник'}
-                </span>
-                {a.id !== 1 && (
-                  <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteAdmin(a.id)} title="Видалити">
-                    {Icon.trash}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 
@@ -1204,6 +1212,7 @@ function Admin() {
           {activeSection === 'services'  && renderServices()}
           {activeSection === 'news'      && renderNews()}
           {activeSection === 'gallery'   && renderGallery()}
+          {activeSection === 'users'     && renderUsers()}
           {activeSection === 'settings'  && renderSettings()}
         </div>
       </div>
