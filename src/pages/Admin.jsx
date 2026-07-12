@@ -1087,31 +1087,46 @@ function Admin() {
         </div>
       </div>
 
-      {/* Site Content */}
+      {/* General Info */}
       <div className="admin-card">
         <div className="admin-card-header">
-          <h3>Контент сайту</h3>
+          <h3>Загальна інформація</h3>
+          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Відображається скрізь на сайті</span>
         </div>
         <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
             <div className="form-group">
-              <label className="form-label">Назва компанії</label>
+              <label className="form-label">Назва підприємства</label>
               <input className="form-input" value={scForm.companyName || ''} onChange={e => setScForm(p => ({ ...p, companyName: e.target.value }))} placeholder='ПП "Наш Дім"' />
+              <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Хедер, футер, заголовок герою</span>
             </div>
             <div className="form-group">
               <label className="form-label">Рік заснування</label>
               <input className="form-input" value={scForm.founded || ''} onChange={e => setScForm(p => ({ ...p, founded: e.target.value }))} placeholder="2000" />
+              <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Бейдж на головній і сторінці «Про нас»</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Керівник</label>
+              <input className="form-input" value={scForm.director || ''} onChange={e => setScForm(p => ({ ...p, director: e.target.value }))} placeholder="Дмитришин Анатолій Євгенович" />
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Слоган / опис у футері</label>
+            <label className="form-label">Опис у футері</label>
             <textarea className="form-textarea" style={{ minHeight: '70px' }} value={scForm.tagline || ''} onChange={e => setScForm(p => ({ ...p, tagline: e.target.value }))} placeholder="Коротке описання підприємства для футеру..." />
           </div>
-          <div className="form-group">
-            <label className="form-label">Керівник</label>
-            <input className="form-input" value={scForm.director || ''} onChange={e => setScForm(p => ({ ...p, director: e.target.value }))} placeholder="Дмитришин Анатолій Євгенович" />
-          </div>
-          <h4 style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 600 }}>Контактні дані</h4>
+          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+            {scSaving ? 'Збереження...' : 'Зберегти'}
+          </button>
+        </form>
+      </div>
+
+      {/* Contacts */}
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Контактні дані</h3>
+          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Футер і сторінка «Про нас»</span>
+        </div>
+        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
             <div className="form-group">
               <label className="form-label">Адреса</label>
@@ -1130,17 +1145,29 @@ function Admin() {
               <input className="form-input" value={scForm.hours || ''} onChange={e => setScForm(p => ({ ...p, hours: e.target.value }))} placeholder="Пн–Чт: 8:00–17:15, Пт: 8:00–16:00" />
             </div>
           </div>
-          <h4 style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 600 }}>Сторінка «Про нас»</h4>
+          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+            {scSaving ? 'Збереження...' : 'Зберегти'}
+          </button>
+        </form>
+      </div>
+
+      {/* About page */}
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3>Сторінка «Про нас»</h3>
+          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Текст розділу «Про підприємство»</span>
+        </div>
+        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
           <div className="form-group">
             <label className="form-label">Перший абзац</label>
-            <textarea className="form-textarea" style={{ minHeight: '90px' }} value={scForm.aboutText || ''} onChange={e => setScForm(p => ({ ...p, aboutText: e.target.value }))} placeholder="Головний опис підприємства..." />
+            <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText || ''} onChange={e => setScForm(p => ({ ...p, aboutText: e.target.value }))} placeholder="Головний опис підприємства..." />
           </div>
           <div className="form-group">
             <label className="form-label">Другий абзац</label>
-            <textarea className="form-textarea" style={{ minHeight: '90px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
+            <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
           </div>
           <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
-            {scSaving ? 'Збереження...' : 'Зберегти контент'}
+            {scSaving ? 'Збереження...' : 'Зберегти'}
           </button>
         </form>
       </div>

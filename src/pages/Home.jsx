@@ -69,7 +69,7 @@ function StatCounter({ value, suffix = '', label, inView }) {
 }
 
 /* ─── Home ───────────────────────────────────────────────── */
-function Home({ news, gallery }) {
+function Home({ news, gallery, siteContent = {} }) {
   const [lbIndex, setLbIndex] = useState(null);
   const galleryUrls = gallery.slice(0, 6).map(item => item.url);
 
@@ -92,7 +92,7 @@ function Home({ news, gallery }) {
           <div className="home-hero-grid" />
         </div>
         <div className="home-hero-content">
-          <span className="home-hero-eyebrow">ПП «Наш Дім» — Тернопіль</span>
+          <span className="home-hero-eyebrow">{siteContent.companyName || 'ПП «Наш Дім»'} — Тернопіль</span>
           <h1 className="home-hero-title">
             Сучасний сервіс<br />
             <span className="home-hero-title-accent">для вашого будинку</span>
@@ -110,7 +110,7 @@ function Home({ news, gallery }) {
             </Link>
           </div>
           <div className="home-hero-badges">
-            <span className="home-hero-badge">{Icon.check} З 2000 року</span>
+            <span className="home-hero-badge">{Icon.check} З {siteContent.founded || '2000'} року</span>
             <span className="home-hero-badge">{Icon.check} 24/7 аварійна служба</span>
             <span className="home-hero-badge">{Icon.check} Понад 50 будинків</span>
           </div>

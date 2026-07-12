@@ -176,7 +176,6 @@ a { color: inherit; text-decoration: none; }
 .admin-page {
   flex: 1;
   display: flex;
-  overflow: hidden;
 }
 
 /* ─── Footer ─────────────────────────────────────────────── */
@@ -1583,8 +1582,6 @@ a { color: inherit; text-decoration: none; }
 .admin-shell {
   display: flex;
   flex: 1;
-  min-height: 100vh;
-  overflow: hidden;
 }
 
 .admin-sidebar {
@@ -1593,10 +1590,6 @@ a { color: inherit; text-decoration: none; }
   background: var(--slate-900);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
 }
 
 .admin-brand {
@@ -1734,7 +1727,6 @@ a { color: inherit; text-decoration: none; }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  overflow: auto;
   background: var(--slate-50);
 }
 

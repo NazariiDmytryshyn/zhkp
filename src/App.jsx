@@ -68,9 +68,9 @@ function App() {
         <header className="layout-header">
           <div className="header-inner">
             <Link to="/" className="brand">
-              <div className="brand-icon brand-icon-img"><img src='/Gemini_Generated_Image_hg1bcohg1bcohg1b.png' alt="Логотип ПП Наш Дім" /></div>
+              <div className="brand-icon brand-icon-img"><img src='/Gemini_Generated_Image_hg1bcohg1bcohg1b.png' alt="Логотип" /></div>
               <div className="brand-text">
-                <h1>ПП "Наш Дім"</h1>
+                <h1>{siteContent.companyName || 'ПП "Наш Дім"'}</h1>
                 <p>Онлайн сервіс підтримки мешканців</p>
               </div>
             </Link>
@@ -101,7 +101,7 @@ function App() {
       ) : (
         <main className="layout-main">
           <Routes>
-            <Route path="/" element={<Home news={news} gallery={gallery} />} />
+            <Route path="/" element={<Home news={news} gallery={gallery} siteContent={siteContent} />} />
             <Route path="/about" element={<About siteContent={siteContent} />} />
             <Route path="/news" element={<News news={news} />} />
             <Route path="/gallery" element={<Gallery gallery={gallery} />} />
@@ -158,7 +158,7 @@ function App() {
             </div>
           </div>
           <div className="footer-bottom">
-            <span>© 2026 ПП "Наш Дім". Всі права захищені.</span>
+            <span>© {new Date().getFullYear()} {siteContent.companyName || 'ПП "Наш Дім"'}. Всі права захищені.</span>
           </div>
         </footer>
       )}
