@@ -151,6 +151,16 @@ const defaultData = {
     aboutText: 'Приватне підприємство "Наш Дім" — житлово-комунальне підприємство міста Тернопіль, зареєстроване у 2000 році. Підприємство забезпечує технічне обслуговування та управління житловим фондом, утримання будинків та прибудинкових територій. Керівник: Дмитришин Анатолій Євгенович.',
     aboutText2: 'Ми обслуговуємо житловий фонд через дочірні підприємства ДП "Наш Дім-2" та ДП "Наш Дім-3". Наша мета — швидко реагувати на заявки мешканців, підтримувати будівлі та прибудинкову територію в належному стані, надавати прозору інформацію про заплановані та виконані роботи.',
   },
+  sections: {
+    about: true,
+    news: true,
+    gallery: true,
+    services: true,
+    tariffs: true,
+    emergency: true,
+    documents: true,
+    request: true,
+  },
   admins: [
     {
       id: 1,
@@ -203,7 +213,15 @@ app.get('/api/site', async (req, res) => {
     tariffs: data.tariffs || [],
     emergencyContacts: data.emergencyContacts || [],
     documents: data.documents || [],
+    sections: data.sections || {},
   });
+});
+
+app.put('/api/admin/sections', authMiddleware, requireSuperadmin, async (req, res) => {
+  const data = await loadData();
+  data.sections = { ...(data.sections || {}), ...req.body };
+  await saveData(data);
+  res.json({ ok: true });
 });
 
 app.put('/api/admin/site-content', authMiddleware, requireSuperadmin, async (req, res) => {

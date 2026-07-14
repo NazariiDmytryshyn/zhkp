@@ -24,6 +24,7 @@ const Icon = {
   edit:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   briefcase:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
   bell:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  layout:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>,
   tag:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
   phone:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.64 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>,
   file:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
@@ -72,6 +73,7 @@ function Admin() {
   const [admins, setAdmins]           = useState([]);
   const [services, setServices]         = useState([]);
   const [serviceReqs, setServiceReqs]   = useState([]);
+  const [sections, setSections]         = useState({});
   const [tariffs, setTariffs]           = useState([]);
   const [emergencyContacts, setEC]      = useState([]);
   const [documents, setDocuments]       = useState([]);
@@ -188,6 +190,7 @@ function Admin() {
       setNews(siteData.news || []);
       setGallery(siteData.gallery || []);
       setServices(siteData.services || []);
+      setSections(siteData.sections || {});
       setTariffs(siteData.tariffs || []);
       setEC(siteData.emergencyContacts || []);
       setDocuments(siteData.documents || []);
@@ -461,6 +464,7 @@ function Admin() {
         { id: 'emergency', label: 'Аварійна',   icon: Icon.phone },
         { id: 'documents', label: 'Документи', icon: Icon.file  },
         ...(user.role === 'superadmin' ? [
+          { id: 'sections', label: 'Розділи',       icon: Icon.layout   },
           { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
           { id: 'settings', label: 'Налаштування', icon: Icon.settings },
         ] : []),
@@ -1003,6 +1007,65 @@ function Admin() {
     </div>
   );
 
+  /* ════════════════ SECTIONS ════════════════ */
+  const SECTION_META = [
+    { key: 'about',     label: 'Про нас',           desc: 'Інформація про підприємство' },
+    { key: 'news',      label: 'Новини',             desc: 'Стрічка новин та оголошень' },
+    { key: 'gallery',   label: 'Галерея',            desc: 'Фотогалерея' },
+    { key: 'services',  label: 'Послуги',            desc: 'Перелік послуг' },
+    { key: 'tariffs',   label: 'Тарифи',             desc: 'Таблиця тарифів' },
+    { key: 'emergency', label: 'Аварійна',           desc: 'Контакти аварійних служб' },
+    { key: 'documents', label: 'Документи',          desc: 'Нормативні документи' },
+    { key: 'request',   label: 'Залишити заявку',    desc: 'Форма для заявок мешканців' },
+  ];
+
+  const handleSectionToggle = async (key, value) => {
+    const next = { ...sections, [key]: value };
+    setSections(next);
+    try {
+      await api.updateSections(next, token);
+      showToast(value ? `«${SECTION_META.find(s => s.key === key)?.label}» увімкнено` : `«${SECTION_META.find(s => s.key === key)?.label}» приховано`);
+    } catch (err) {
+      setSections(sections);
+      showToast(err.message, 'error');
+    }
+  };
+
+  const renderSections = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div>
+            <h3>Розділи сайту</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--slate-500)', margin: '0.25rem 0 0' }}>
+              Вимкнені розділи зникають з навігації для відвідувачів
+            </p>
+          </div>
+        </div>
+        <div className="section-flags-list">
+          {SECTION_META.map(s => {
+            const enabled = sections[s.key] !== false;
+            return (
+              <div key={s.key} className={`section-flag-row ${enabled ? 'enabled' : 'disabled'}`}>
+                <div className="section-flag-info">
+                  <span className="section-flag-label">{s.label}</span>
+                  <span className="section-flag-desc">{s.desc}</span>
+                </div>
+                <button
+                  className={`section-toggle ${enabled ? 'on' : 'off'}`}
+                  onClick={() => handleSectionToggle(s.key, !enabled)}
+                  aria-label={enabled ? 'Вимкнути' : 'Увімкнути'}
+                >
+                  <span className="section-toggle-knob" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
   /* ════════════════ TARIFFS ════════════════ */
   const handleAddTariff = async (e) => {
     e.preventDefault();
@@ -1301,7 +1364,7 @@ function Admin() {
             </div>
             <div style={{ display: 'flex', gap: '0.625rem' }}>
               <button className="btn btn-primary btn-sm" type="submit" disabled={docUploading}>
-                {docUploading ? 'Завантаження...' : `${Icon.upload} Завантажити`}
+                {docUploading ? 'Завантаження...' : <>{Icon.upload} Завантажити</>}
               </button>
               {docFile && <button className="btn btn-ghost btn-sm" type="button" onClick={() => setDocFile(null)}>Скасувати</button>}
             </div>
@@ -1600,6 +1663,7 @@ function Admin() {
           {activeSection === 'services'  && renderServices()}
           {activeSection === 'news'      && renderNews()}
           {activeSection === 'gallery'   && renderGallery()}
+          {activeSection === 'sections'  && renderSections()}
           {activeSection === 'tariffs'   && renderTariffs()}
           {activeSection === 'emergency' && renderEmergency()}
           {activeSection === 'documents' && renderDocuments()}

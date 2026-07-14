@@ -30,6 +30,7 @@ function App() {
   const [tariffs, setTariffs] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [sections, setSections] = useState({});
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +49,7 @@ function App() {
         setTariffs(site.tariffs || []);
         setEmergencyContacts(site.emergencyContacts || []);
         setDocuments(site.documents || []);
+        setSections(site.sections || {});
       } catch (error) {
         console.error('Не вдалося завантажити сайт:', error);
       }
@@ -91,14 +93,14 @@ function App() {
             </button>
             <nav className={`main-nav${mobileOpen ? ' mobile-open' : ''}`}>
               <NavLink {...activeLink} to="/" onClick={() => setMobileOpen(false)}>Головна</NavLink>
-              <NavLink {...activeLink} to="/about" onClick={() => setMobileOpen(false)}>Про нас</NavLink>
-              <NavLink {...activeLink} to="/news" onClick={() => setMobileOpen(false)}>Новини</NavLink>
-              <NavLink {...activeLink} to="/gallery" onClick={() => setMobileOpen(false)}>Галерея</NavLink>
-              <NavLink {...activeLink} to="/services" onClick={() => setMobileOpen(false)}>Послуги</NavLink>
-              <NavLink {...activeLink} to="/tariffs" onClick={() => setMobileOpen(false)}>Тарифи</NavLink>
-              <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійна</NavLink>
-              {documents.length > 0 && <NavLink {...activeLink} to="/documents" onClick={() => setMobileOpen(false)}>Документи</NavLink>}
-              <NavLink {...activeLink} to="/request" onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>
+              {sections.about     !== false && <NavLink {...activeLink} to="/about"     onClick={() => setMobileOpen(false)}>Про нас</NavLink>}
+              {sections.news      !== false && <NavLink {...activeLink} to="/news"      onClick={() => setMobileOpen(false)}>Новини</NavLink>}
+              {sections.gallery   !== false && <NavLink {...activeLink} to="/gallery"   onClick={() => setMobileOpen(false)}>Галерея</NavLink>}
+              {sections.services  !== false && <NavLink {...activeLink} to="/services"  onClick={() => setMobileOpen(false)}>Послуги</NavLink>}
+              {sections.tariffs   !== false && <NavLink {...activeLink} to="/tariffs"   onClick={() => setMobileOpen(false)}>Тарифи</NavLink>}
+              {sections.emergency !== false && <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійна</NavLink>}
+              {sections.documents !== false && documents.length > 0 && <NavLink {...activeLink} to="/documents" onClick={() => setMobileOpen(false)}>Документи</NavLink>}
+              {sections.request   !== false && <NavLink {...activeLink} to="/request"   onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>}
             </nav>
           </div>
         </header>
@@ -143,13 +145,13 @@ function App() {
               <h4>Навігація</h4>
               <ul className="footer-links">
                 <li><Link to="/">Головна</Link></li>
-                <li><Link to="/about">Про нас</Link></li>
-                <li><Link to="/news">Новини</Link></li>
-                <li><Link to="/gallery">Галерея</Link></li>
-                <li><Link to="/tariffs">Тарифи</Link></li>
-                <li><Link to="/emergency">Аварійна</Link></li>
-                {documents.length > 0 && <li><Link to="/documents">Документи</Link></li>}
-                <li><Link to="/request">Залишити заявку</Link></li>
+                {sections.about     !== false && <li><Link to="/about">Про нас</Link></li>}
+                {sections.news      !== false && <li><Link to="/news">Новини</Link></li>}
+                {sections.gallery   !== false && <li><Link to="/gallery">Галерея</Link></li>}
+                {sections.tariffs   !== false && <li><Link to="/tariffs">Тарифи</Link></li>}
+                {sections.emergency !== false && <li><Link to="/emergency">Аварійна</Link></li>}
+                {sections.documents !== false && documents.length > 0 && <li><Link to="/documents">Документи</Link></li>}
+                {sections.request   !== false && <li><Link to="/request">Залишити заявку</Link></li>}
               </ul>
             </div>
 

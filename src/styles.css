@@ -2780,6 +2780,68 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ═══════════════════════════════════════════════
+   ADMIN — SECTION FLAGS
+═══════════════════════════════════════════════ */
+.section-flags-list { display: grid; }
+
+.section-flag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--slate-100);
+  transition: background 0.15s;
+}
+
+.section-flag-row:last-child { border-bottom: none; }
+.section-flag-row.disabled .section-flag-label { color: var(--slate-400); }
+.section-flag-row.disabled .section-flag-desc  { color: var(--slate-300); }
+
+.section-flag-info { display: flex; flex-direction: column; gap: 0.2rem; }
+
+.section-flag-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--slate-800);
+}
+
+.section-flag-desc {
+  font-size: 0.8125rem;
+  color: var(--slate-500);
+}
+
+/* Toggle switch */
+.section-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.section-toggle.on  { background: var(--blue-500); }
+.section-toggle.off { background: var(--slate-300); }
+
+.section-toggle-knob {
+  position: absolute;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: left 0.2s;
+}
+
+.section-toggle.on  .section-toggle-knob { left: 23px; }
+.section-toggle.off .section-toggle-knob { left: 3px; }
+
+/* ═══════════════════════════════════════════════
    TARIFFS PAGE
 ═══════════════════════════════════════════════ */
 .page-tariffs { }
@@ -2934,8 +2996,11 @@ a { color: inherit; text-decoration: none; }
 .emergency-note {
   font-size: 0.9375rem;
   color: var(--slate-700);
-  border-top: 1px solid var(--slate-200);
-  padding-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 4rem;
 }
 
 /* ═══════════════════════════════════════════════
