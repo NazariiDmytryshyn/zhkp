@@ -1,3 +1,5 @@
+import { Helmet } from 'react-helmet-async';
+
 function formatDate(ts) {
   if (!ts) return '';
   return new Date(ts).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -6,6 +8,11 @@ function formatDate(ts) {
 function News({ news }) {
   return (
     <section className="page page-news">
+      <Helmet>
+        <title>Новини — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Останні новини та оголошення ПП «Наш Дім» Тернопіль. Інформація про планові роботи, відключення, події." />
+        <link rel="canonical" href="https://nash-dim.ink/news" />
+      </Helmet>
       <div className="section-header">
         <div>
           <h2>Новини</h2>

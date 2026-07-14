@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
 const initialValues = { name: '', phone: '', address: '', message: '' };
@@ -69,6 +70,11 @@ function Request({ onSubmit }) {
 
   return (
     <section className="page page-request">
+      <Helmet>
+        <title>Подати заявку — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Подайте заявку на обслуговування онлайн. ПП «Наш Дім» Тернопіль — швидке реагування на звернення мешканців." />
+        <link rel="canonical" href="https://nash-dim.ink/request" />
+      </Helmet>
       <div className="section-header" style={{ justifyContent: 'center', textAlign: 'center' }}>
         <div>
           <h2>Заявка на обслуговування</h2>

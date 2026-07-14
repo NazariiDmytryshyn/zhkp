@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Lightbox from '../components/Lightbox.jsx';
 
 function Gallery({ gallery }) {
@@ -7,6 +8,11 @@ function Gallery({ gallery }) {
 
   return (
     <section className="page page-gallery">
+      <Helmet>
+        <title>Галерея — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Фотогалерея виконаних робіт та обслуговування будинків ПП «Наш Дім» у Тернополі." />
+        <link rel="canonical" href="https://nash-dim.ink/gallery" />
+      </Helmet>
       <div className="section-header">
         <div>
           <h2>Галерея</h2>

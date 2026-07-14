@@ -1,3 +1,5 @@
+import { Helmet } from 'react-helmet-async';
+
 function formatSize(bytes) {
   if (!bytes) return '';
   if (bytes < 1024) return `${bytes} Б`;
@@ -28,6 +30,11 @@ function Documents({ documents }) {
 
   return (
     <section className="page page-documents">
+      <Helmet>
+        <title>Документи — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Нормативні та інформаційні документи ПП «Наш Дім» Тернопіль для завантаження." />
+        <link rel="canonical" href="https://nash-dim.ink/documents" />
+      </Helmet>
       <div className="section-header">
         <div><h2>Документи</h2><p>Нормативні та інформаційні документи підприємства</p></div>
       </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { Helmet } from 'react-helmet-async';
 import Lightbox from '../components/Lightbox.jsx';
 
 /* ─── Hooks ──────────────────────────────────────────────── */
@@ -82,6 +83,11 @@ function Home({ news, gallery, siteContent = {} }) {
 
   return (
     <div className="home-wrap">
+      <Helmet>
+        <title>{siteContent.companyName || 'ПП «Наш Дім»'} Тернопіль — Управління житловим фондом</title>
+        <meta name="description" content="Приватне підприємство «Наш Дім» — управління та обслуговування житлового фонду міста Тернопіль з 2000 року. Подати заявку онлайн, новини, тарифи, аварійні контакти." />
+        <link rel="canonical" href="https://nash-dim.ink/" />
+      </Helmet>
 
       {/* ── Hero ── */}
       <section className="home-hero">

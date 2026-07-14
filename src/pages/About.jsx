@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Helmet } from 'react-helmet-async';
 
 const values = [
   {
@@ -253,6 +254,11 @@ function About({ siteContent = {} }) {
 
   return (
     <section className="page page-about">
+      <Helmet>
+        <title>Про нас — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Приватне підприємство «Наш Дім» — управління житловим фондом Тернополя з 2000 року. Керівник, місія, контакти, дочірні підприємства." />
+        <link rel="canonical" href="https://nash-dim.ink/about" />
+      </Helmet>
       <div className="section-header">
         <div>
           <h2>Про наше підприємство</h2>

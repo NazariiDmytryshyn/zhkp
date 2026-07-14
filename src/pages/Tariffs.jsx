@@ -1,3 +1,5 @@
+import { Helmet } from 'react-helmet-async';
+
 function groupBy(arr, key) {
   return arr.reduce((acc, item) => {
     const g = item[key] || 'Інше';
@@ -11,6 +13,10 @@ function Tariffs({ tariffs }) {
   if (!tariffs || tariffs.length === 0) {
     return (
       <section className="page page-tariffs">
+        <Helmet>
+          <title>Тарифи — ПП «Наш Дім» Тернопіль</title>
+          <meta name="description" content="Актуальні тарифи на послуги ПП «Наш Дім» Тернопіль." />
+        </Helmet>
         <div className="section-header">
           <div><h2>Тарифи</h2><p>Актуальні тарифи на послуги підприємства</p></div>
         </div>
@@ -25,6 +31,11 @@ function Tariffs({ tariffs }) {
 
   return (
     <section className="page page-tariffs">
+      <Helmet>
+        <title>Тарифи — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Актуальні тарифи на послуги ПП «Наш Дім» Тернопіль: водопостачання, опалення, прибирання, обслуговування будинків." />
+        <link rel="canonical" href="https://nash-dim.ink/tariffs" />
+      </Helmet>
       <div className="section-header">
         <div><h2>Тарифи</h2><p>Актуальні тарифи на послуги підприємства</p></div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import * as api from '../api/zhkpApi.js';
 
 function stripHtml(html) {
@@ -186,6 +187,11 @@ function Services({ services }) {
 
   return (
     <section className="page page-services">
+      <Helmet>
+        <title>Послуги — ПП «Наш Дім» Тернопіль</title>
+        <meta name="description" content="Перелік послуг ПП «Наш Дім» Тернопіль: технічне обслуговування, прибирання, ремонт будинків та прибудинкових територій." />
+        <link rel="canonical" href="https://nash-dim.ink/services" />
+      </Helmet>
       <div className="section-header">
         <div>
           <h2>Додаткові послуги</h2>
