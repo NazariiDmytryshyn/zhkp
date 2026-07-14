@@ -60,6 +60,7 @@ function Admin() {
 
   useEffect(() => {
     if (user?.role === 'worker') setActive('requests');
+    else if (user?.role === 'viewer') setActive(s => (s === 'dashboard' || s === 'requests') ? s : 'dashboard');
   }, [user?.role]);
 
   /* login */
@@ -454,9 +455,19 @@ function Admin() {
 
   /* ════════════════ SIDEBAR ITEMS ════════════════ */
   const navItems = user.role === 'worker'
-    ? [{ id: 'requests', label: 'Заявки', icon: Icon.list }]
+    ? [
+        { id: 'requests', label: 'Заявки', icon: Icon.list },
+      ]
+    : user.role === 'viewer'
+    ? [
+        { id: 'dashboard', label: 'Огляд',  icon: Icon.grid },
+        { type: 'divider', label: 'Заявки' },
+        { id: 'requests',  label: 'Заявки', icon: Icon.list },
+      ]
     : [
         { id: 'dashboard', label: 'Огляд', icon: Icon.grid },
+        { type: 'divider', label: 'Заявки' },
+        { id: 'requests',  label: 'Заявки',    icon: Icon.list      },
         { type: 'divider', label: 'Контент' },
         { id: 'news',      label: 'Новини',    icon: Icon.news      },
         { id: 'gallery',   label: 'Галерея',   icon: Icon.image     },
@@ -464,13 +475,9 @@ function Admin() {
         { id: 'tariffs',   label: 'Тарифи',    icon: Icon.tag       },
         { id: 'emergency', label: 'Аварійна',  icon: Icon.phone     },
         { id: 'documents', label: 'Документи', icon: Icon.file      },
-        { type: 'divider', label: 'Заявки' },
-        { id: 'requests',  label: 'Заявки',    icon: Icon.list      },
-        ...(user.role === 'superadmin' ? [
-          { type: 'divider', label: 'Адміністрування' },
-          { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
-          { id: 'settings', label: 'Налаштування', icon: Icon.settings },
-        ] : []),
+        { type: 'divider', label: 'Адміністрування' },
+        { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
+        { id: 'settings', label: 'Налаштування', icon: Icon.settings },
       ];
 
   const sectionTitle = navItems.find((n) => n.id === activeSection)?.label ?? '';
