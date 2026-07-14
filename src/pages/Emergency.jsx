@@ -16,7 +16,7 @@ function Emergency({ emergencyContacts }) {
     return (
       <section className="page page-emergency">
         <div className="section-header">
-          <div><h2>Аварійні контакти</h2><p>Телефони екстреної та аварійної служб</p></div>
+          <div><h2>Аварійна</h2><p>Телефони екстреної та аварійної служб</p></div>
         </div>
         <div className="content-block" style={{ textAlign: 'center', padding: '3rem' }}>
           <p style={{ color: 'var(--slate-500)' }}>Контакти будуть додані найближчим часом</p>
@@ -29,7 +29,7 @@ function Emergency({ emergencyContacts }) {
     <section className="page page-emergency">
       <div className="section-header">
         <div>
-          <h2>Аварійні контакти</h2>
+          <h2>Аварійна</h2>
           <p>Телефони служб екстреної допомоги та аварійного реагування</p>
         </div>
       </div>

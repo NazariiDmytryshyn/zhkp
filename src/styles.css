@@ -2782,7 +2782,7 @@ a { color: inherit; text-decoration: none; }
 /* ═══════════════════════════════════════════════
    TARIFFS PAGE
 ═══════════════════════════════════════════════ */
-.page-tariffs { max-width: 860px; }
+.page-tariffs { }
 
 .tariff-card {
   background: white;

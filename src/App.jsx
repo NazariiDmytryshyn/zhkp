@@ -96,7 +96,7 @@ function App() {
               <NavLink {...activeLink} to="/gallery" onClick={() => setMobileOpen(false)}>Галерея</NavLink>
               <NavLink {...activeLink} to="/services" onClick={() => setMobileOpen(false)}>Послуги</NavLink>
               <NavLink {...activeLink} to="/tariffs" onClick={() => setMobileOpen(false)}>Тарифи</NavLink>
-              <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійні контакти</NavLink>
+              <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійна</NavLink>
               {documents.length > 0 && <NavLink {...activeLink} to="/documents" onClick={() => setMobileOpen(false)}>Документи</NavLink>}
               <NavLink {...activeLink} to="/request" onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>
             </nav>
@@ -147,7 +147,7 @@ function App() {
                 <li><Link to="/news">Новини</Link></li>
                 <li><Link to="/gallery">Галерея</Link></li>
                 <li><Link to="/tariffs">Тарифи</Link></li>
-                <li><Link to="/emergency">Аварійні контакти</Link></li>
+                <li><Link to="/emergency">Аварійна</Link></li>
                 {documents.length > 0 && <li><Link to="/documents">Документи</Link></li>}
                 <li><Link to="/request">Залишити заявку</Link></li>
               </ul>

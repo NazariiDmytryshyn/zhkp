@@ -458,7 +458,7 @@ function Admin() {
         { id: 'news',      label: 'Новини',   icon: Icon.news  },
         { id: 'gallery',   label: 'Галерея',  icon: Icon.image },
         { id: 'tariffs',   label: 'Тарифи',   icon: Icon.tag   },
-        { id: 'emergency', label: 'Аварійні',  icon: Icon.phone },
+        { id: 'emergency', label: 'Аварійна',   icon: Icon.phone },
         { id: 'documents', label: 'Документи', icon: Icon.file  },
         ...(user.role === 'superadmin' ? [
           { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
@@ -1165,7 +1165,7 @@ function Admin() {
     <div style={{ display: 'grid', gap: '1.25rem' }}>
       <div className="admin-card">
         <div className="admin-card-header">
-          <h3>Аварійні контакти ({emergencyContacts.length})</h3>
+          <h3>Аварійна ({emergencyContacts.length})</h3>
           {user.role === 'superadmin' && (
             <button className="btn btn-primary btn-sm" onClick={() => setShowECForm(p => !p)}>
               {Icon.plus} Додати контакт
