@@ -103,7 +103,7 @@ function App() {
               {sections.tariffs   !== false && <NavLink {...activeLink} to="/tariffs"   onClick={() => setMobileOpen(false)}>Тарифи</NavLink>}
               {sections.emergency !== false && <NavLink {...activeLink} to="/emergency" onClick={() => setMobileOpen(false)}>Аварійна</NavLink>}
               {sections.documents !== false && documents.length > 0 && <NavLink {...activeLink} to="/documents" onClick={() => setMobileOpen(false)}>Документи</NavLink>}
-              {sections.request   !== false && <NavLink {...activeLink} to="/request"   onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>}
+              {sections.request   !== false && <NavLink to="/request" className="nav-cta" onClick={() => setMobileOpen(false)}>Залишити заявку</NavLink>}
             </nav>
           </div>
         </header>

@@ -203,11 +203,16 @@ function Home({ news, gallery, siteContent = {} }) {
             >
               <div className="home-step-num">{s.n}</div>
               <div className="home-step-icon">{s.icon}</div>
-              <h3>{i === 0 ? <Link to="/request">{s.title}</Link> : s.title}</h3>
+              <h3>{s.title}</h3>
               <p>{s.text}</p>
               {i < 2 && <div className="home-step-arrow">{Icon.arrow}</div>}
             </div>
           ))}
+        </div>
+        <div className={`home-steps-cta anim-up${stepsInView ? ' visible' : ''}`} style={{ transitionDelay: '450ms' }}>
+          <Link to="/request" className="btn home-btn-primary">
+            Залишити заявку {Icon.arrow}
+          </Link>
         </div>
       </section>
 
