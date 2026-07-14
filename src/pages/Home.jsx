@@ -147,10 +147,10 @@ function Home({ news, gallery, siteContent = {} }) {
       {/* ── Stats ── */}
       <section className="home-stats-wrap" ref={statsRef}>
         <div className="home-stats">
-          <StatCounter value={50}   suffix="+"  label="будинків під управлінням" inView={statsInView} />
-          <StatCounter value={5000} suffix="+"  label="мешканців обслуговуємо"   inView={statsInView} />
-          <StatCounter value={25}   suffix=""   label="років на ринку"            inView={statsInView} />
-          <StatCounter value={98}   suffix="%"  label="задоволених мешканців"     inView={statsInView} />
+          <StatCounter value={parseInt(siteContent.statHouses   ) || 50}   suffix="+"  label="будинків під управлінням" inView={statsInView} />
+          <StatCounter value={parseInt(siteContent.statResidents) || 5000} suffix="+"  label="мешканців обслуговуємо"   inView={statsInView} />
+          <StatCounter value={siteContent.founded ? new Date().getFullYear() - parseInt(siteContent.founded) : 25} suffix="" label="років на ринку" inView={statsInView} />
+          <StatCounter value={parseInt(siteContent.statSatisfied) || 98}   suffix="%"  label="задоволених мешканців"     inView={statsInView} />
         </div>
       </section>
 
@@ -203,7 +203,7 @@ function Home({ news, gallery, siteContent = {} }) {
             >
               <div className="home-step-num">{s.n}</div>
               <div className="home-step-icon">{s.icon}</div>
-              <h3>{s.title}</h3>
+              <h3>{i === 0 ? <Link to="/request">{s.title}</Link> : s.title}</h3>
               <p>{s.text}</p>
               {i < 2 && <div className="home-step-arrow">{Icon.arrow}</div>}
             </div>
