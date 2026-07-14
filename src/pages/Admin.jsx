@@ -417,7 +417,7 @@ function Admin() {
     return (
       <div className="admin-login-wrap">
         <div className="admin-login-card">
-          <h2 className="admin-login-title">Вхід в адмінку</h2>
+          <h2 className="admin-login-title">Увійдіть до свого акаунту</h2>
           <form className="admin-login-form" onSubmit={handleLogin}>
             <input
               className="form-input"
