@@ -36,7 +36,10 @@ function App() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
 
   useEffect(() => {
     const loadSite = async () => {

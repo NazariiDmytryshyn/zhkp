@@ -416,72 +416,37 @@ function Admin() {
   if (!user) {
     return (
       <div className="admin-login-wrap">
-        <div className="admin-login-split">
-
-          {/* Left panel */}
-          <div className="admin-login-left">
-            <div className="admin-login-left-inner">
-              <div className="admin-login-brand">
-                <div className="admin-login-brand-icon">{Icon.house}</div>
-                <span>ПП «Наш Дім»</span>
-              </div>
-              <h1 className="admin-login-headline">Панель керування сайтом</h1>
-              <p className="admin-login-sub">Управляйте контентом, заявками мешканців та налаштуваннями.</p>
-              <div className="admin-login-features">
-                <div className="admin-login-feature">{Icon.list} Заявки мешканців</div>
-                <div className="admin-login-feature">{Icon.news} Новини та галерея</div>
-                <div className="admin-login-feature">{Icon.settings} Налаштування сайту</div>
-              </div>
+        <div className="admin-login-card">
+          <h2 className="admin-login-title">Вхід в адмінку</h2>
+          <form className="admin-login-form" onSubmit={handleLogin}>
+            <input
+              className="form-input"
+              value={loginData.username}
+              onChange={(e) => setLogin({ ...loginData, username: e.target.value })}
+              placeholder="Логін"
+              autoComplete="username"
+              required
+            />
+            <div className="login-password-wrap">
+              <input
+                type={loginShowPwd ? 'text' : 'password'}
+                className="form-input"
+                value={loginData.password}
+                onChange={(e) => setLogin({ ...loginData, password: e.target.value })}
+                placeholder="Пароль"
+                autoComplete="current-password"
+                required
+              />
+              <button type="button" className="login-pwd-toggle" onClick={() => setLoginShowPwd(p => !p)}>
+                {loginShowPwd
+                  ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
             </div>
-          </div>
-
-          {/* Right panel */}
-          <div className="admin-login-right">
-            <div className="admin-login-form-wrap">
-              <div className="admin-login-form-header">
-                <h2>Вхід в адмінку</h2>
-                <p>Введіть ваші облікові дані</p>
-              </div>
-              <form className="admin-login-form" onSubmit={handleLogin}>
-                <div className="form-group">
-                  <label className="form-label">Логін</label>
-                  <input
-                    className="form-input"
-                    value={loginData.username}
-                    onChange={(e) => setLogin({ ...loginData, username: e.target.value })}
-                    placeholder="Ваш логін"
-                    autoComplete="username"
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Пароль</label>
-                  <div className="login-password-wrap">
-                    <input
-                      type={loginShowPwd ? 'text' : 'password'}
-                      className="form-input"
-                      value={loginData.password}
-                      onChange={(e) => setLogin({ ...loginData, password: e.target.value })}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      required
-                    />
-                    <button type="button" className="login-pwd-toggle" onClick={() => setLoginShowPwd(p => !p)}>
-                      {loginShowPwd
-                        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                        : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
-                  </div>
-                </div>
-                {loginError && <div className="login-error">{loginError}</div>}
-                <button className="btn btn-primary admin-login-btn" type="submit">
-                  Увійти
-                </button>
-              </form>
-            </div>
-          </div>
-
+            {loginError && <div className="login-error">{loginError}</div>}
+            <button className="admin-login-btn" type="submit">Увійти</button>
+          </form>
         </div>
       </div>
     );
