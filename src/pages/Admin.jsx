@@ -56,6 +56,7 @@ function Admin() {
   const [token, setToken]             = useState(api.getToken());
   const [user, setUser]               = useState(null);
   const [activeSection, setActive]    = useState('dashboard');
+  const [settingsTab, setSettingsTab] = useState('main');
 
   useEffect(() => {
     if (user?.role === 'worker') setActive('requests');
@@ -455,16 +456,18 @@ function Admin() {
   const navItems = user.role === 'worker'
     ? [{ id: 'requests', label: 'Заявки', icon: Icon.list }]
     : [
-        { id: 'dashboard', label: 'Огляд',    icon: Icon.grid },
-        { id: 'requests',  label: 'Заявки',   icon: Icon.list },
-        { id: 'services',  label: 'Послуги',  icon: Icon.briefcase },
-        { id: 'news',      label: 'Новини',   icon: Icon.news  },
-        { id: 'gallery',   label: 'Галерея',  icon: Icon.image },
-        { id: 'tariffs',   label: 'Тарифи',   icon: Icon.tag   },
-        { id: 'emergency', label: 'Аварійна',   icon: Icon.phone },
-        { id: 'documents', label: 'Документи', icon: Icon.file  },
+        { id: 'dashboard', label: 'Огляд', icon: Icon.grid },
+        { type: 'divider', label: 'Контент' },
+        { id: 'news',      label: 'Новини',    icon: Icon.news      },
+        { id: 'gallery',   label: 'Галерея',   icon: Icon.image     },
+        { id: 'services',  label: 'Послуги',   icon: Icon.briefcase },
+        { id: 'tariffs',   label: 'Тарифи',    icon: Icon.tag       },
+        { id: 'emergency', label: 'Аварійна',  icon: Icon.phone     },
+        { id: 'documents', label: 'Документи', icon: Icon.file      },
+        { type: 'divider', label: 'Заявки' },
+        { id: 'requests',  label: 'Заявки',    icon: Icon.list      },
         ...(user.role === 'superadmin' ? [
-          { id: 'sections', label: 'Розділи',       icon: Icon.layout   },
+          { type: 'divider', label: 'Адміністрування' },
           { id: 'users',    label: 'Користувачі',  icon: Icon.users    },
           { id: 'settings', label: 'Налаштування', icon: Icon.settings },
         ] : []),
@@ -1031,41 +1034,6 @@ function Admin() {
     }
   };
 
-  const renderSections = () => (
-    <div style={{ display: 'grid', gap: '1.25rem' }}>
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <div>
-            <h3>Розділи сайту</h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--slate-500)', margin: '0.25rem 0 0' }}>
-              Вимкнені розділи зникають з навігації для відвідувачів
-            </p>
-          </div>
-        </div>
-        <div className="section-flags-list">
-          {SECTION_META.map(s => {
-            const enabled = sections[s.key] !== false;
-            return (
-              <div key={s.key} className={`section-flag-row ${enabled ? 'enabled' : 'disabled'}`}>
-                <div className="section-flag-info">
-                  <span className="section-flag-label">{s.label}</span>
-                  <span className="section-flag-desc">{s.desc}</span>
-                </div>
-                <button
-                  className={`section-toggle ${enabled ? 'on' : 'off'}`}
-                  onClick={() => handleSectionToggle(s.key, !enabled)}
-                  aria-label={enabled ? 'Вимкнути' : 'Увімкнути'}
-                >
-                  <span className="section-toggle-knob" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-
   /* ════════════════ TARIFFS ════════════════ */
   const handleAddTariff = async (e) => {
     e.preventDefault();
@@ -1461,140 +1429,197 @@ function Admin() {
   );
 
   /* ════════════════ SETTINGS ════════════════ */
-  const renderSettings = () => (
-    <div style={{ display: 'grid', gap: '1.5rem' }}>
+  const SETTINGS_TABS = [
+    { id: 'main',     label: 'Основне'   },
+    { id: 'contacts', label: 'Контакти'  },
+    { id: 'about',    label: 'Про нас'   },
+    { id: 'sections', label: 'Розділи'   },
+  ];
 
-      {/* Logo */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3>Логотип сайту</h3>
-        </div>
-        <div className="admin-card-body">
-          <div className="logo-preview-wrap">
-            {logoPreview && (
-              <img className="logo-preview-img" src={logoPreview} alt="Поточний логотип" onError={(e) => { e.target.style.opacity = '0.3'; }} />
-            )}
-            <form className="logo-preview-form" onSubmit={handleSetLogo}>
-              <div className="upload-mode-tabs">
-                <button type="button" className={`upload-mode-tab ${logoMode === 'url' ? 'active' : ''}`} onClick={() => setLogoMode('url')}>URL-посилання</button>
-                <button type="button" className={`upload-mode-tab ${logoMode === 'file' ? 'active' : ''}`} onClick={() => setLogoMode('file')}>З комп'ютера</button>
+  const renderSettings = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+
+      {/* Sub-tabs */}
+      <div className="settings-tabs">
+        {SETTINGS_TABS.map(t => (
+          <button
+            key={t.id}
+            className={`settings-tab ${settingsTab === t.id ? 'active' : ''}`}
+            onClick={() => setSettingsTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Основне ── */}
+      {settingsTab === 'main' && (
+        <>
+          <div className="admin-card">
+            <div className="admin-card-header"><h3>Логотип сайту</h3></div>
+            <div className="admin-card-body">
+              <div className="logo-preview-wrap">
+                {logoPreview && (
+                  <img className="logo-preview-img" src={logoPreview} alt="Поточний логотип" onError={(e) => { e.target.style.opacity = '0.3'; }} />
+                )}
+                <form className="logo-preview-form" onSubmit={handleSetLogo}>
+                  <div className="upload-mode-tabs">
+                    <button type="button" className={`upload-mode-tab ${logoMode === 'url' ? 'active' : ''}`} onClick={() => setLogoMode('url')}>URL-посилання</button>
+                    <button type="button" className={`upload-mode-tab ${logoMode === 'file' ? 'active' : ''}`} onClick={() => setLogoMode('file')}>З комп'ютера</button>
+                  </div>
+                  {logoMode === 'url' ? (
+                    <div className="form-group">
+                      <input className="form-input" value={logoInput} onChange={(e) => setLogoInput(e.target.value)} placeholder="https://..." required />
+                    </div>
+                  ) : (
+                    <label
+                      className={`file-drop-zone ${logoFile ? 'has-file' : ''}`}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const f = e.dataTransfer.files[0];
+                        if (f && f.type.startsWith('image/')) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
+                      }}
+                    >
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                        const f = e.target.files[0];
+                        if (f) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
+                      }} />
+                      {logoFilePreview
+                        ? <img className="file-drop-preview" src={logoFilePreview} alt="preview" />
+                        : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>PNG, JPG, SVG до 10 МБ</small></>
+                      }
+                    </label>
+                  )}
+                  <button className="btn btn-primary btn-sm" type="submit" style={{ width: 'fit-content' }}>Оновити логотип</button>
+                </form>
               </div>
-              {logoMode === 'url' ? (
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-header">
+              <h3>Загальна інформація</h3>
+              <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Відображається скрізь на сайті</span>
+            </div>
+            <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
                 <div className="form-group">
-                  <input className="form-input" value={logoInput} onChange={(e) => setLogoInput(e.target.value)} placeholder="https://..." required />
+                  <label className="form-label">Назва підприємства</label>
+                  <input className="form-input" value={scForm.companyName || ''} onChange={e => setScForm(p => ({ ...p, companyName: e.target.value }))} placeholder='ПП "Наш Дім"' />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Хедер, футер, заголовок герою</span>
                 </div>
-              ) : (
-                <label
-                  className={`file-drop-zone ${logoFile ? 'has-file' : ''}`}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const f = e.dataTransfer.files[0];
-                    if (f && f.type.startsWith('image/')) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
-                  }}
-                >
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                    const f = e.target.files[0];
-                    if (f) { setLogoFile(f); setLogoFilePreview(URL.createObjectURL(f)); }
-                  }} />
-                  {logoFilePreview
-                    ? <img className="file-drop-preview" src={logoFilePreview} alt="preview" />
-                    : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>PNG, JPG, SVG до 10 МБ</small></>
-                  }
-                </label>
-              )}
-              <button className="btn btn-primary btn-sm" type="submit" style={{ width: 'fit-content' }}>
-                Оновити логотип
+                <div className="form-group">
+                  <label className="form-label">Рік заснування</label>
+                  <input className="form-input" value={scForm.founded || ''} onChange={e => setScForm(p => ({ ...p, founded: e.target.value }))} placeholder="2000" />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Бейдж на головній і сторінці «Про нас»</span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Керівник</label>
+                  <input className="form-input" value={scForm.director || ''} onChange={e => setScForm(p => ({ ...p, director: e.target.value }))} placeholder="Дмитришин Анатолій Євгенович" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Опис у футері</label>
+                <textarea className="form-textarea" style={{ minHeight: '70px' }} value={scForm.tagline || ''} onChange={e => setScForm(p => ({ ...p, tagline: e.target.value }))} placeholder="Коротке описання підприємства для футеру..." />
+              </div>
+              <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+                {scSaving ? 'Збереження...' : 'Зберегти'}
               </button>
             </form>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* General Info */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3>Загальна інформація</h3>
-          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Відображається скрізь на сайті</span>
+      {/* ── Контакти ── */}
+      {settingsTab === 'contacts' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3>Контактні дані</h3>
+            <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Футер і сторінка «Про нас»</span>
+          </div>
+          <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+              <div className="form-group">
+                <label className="form-label">Адреса</label>
+                <input className="form-input" value={scForm.address || ''} onChange={e => setScForm(p => ({ ...p, address: e.target.value }))} placeholder="вул. Клима Савури, 3, м. Тернопіль" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Телефон</label>
+                <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-34-75" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input className="form-input" value={scForm.email || ''} onChange={e => setScForm(p => ({ ...p, email: e.target.value }))} placeholder="info@nashdim-te.at.ua" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Режим роботи</label>
+                <input className="form-input" value={scForm.hours || ''} onChange={e => setScForm(p => ({ ...p, hours: e.target.value }))} placeholder="Пн–Чт: 8:00–17:15, Пт: 8:00–16:00" />
+              </div>
+            </div>
+            <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+              {scSaving ? 'Збереження...' : 'Зберегти'}
+            </button>
+          </form>
         </div>
-        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-            <div className="form-group">
-              <label className="form-label">Назва підприємства</label>
-              <input className="form-input" value={scForm.companyName || ''} onChange={e => setScForm(p => ({ ...p, companyName: e.target.value }))} placeholder='ПП "Наш Дім"' />
-              <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Хедер, футер, заголовок герою</span>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Рік заснування</label>
-              <input className="form-input" value={scForm.founded || ''} onChange={e => setScForm(p => ({ ...p, founded: e.target.value }))} placeholder="2000" />
-              <span style={{ fontSize: '0.75rem', color: 'var(--slate-400)' }}>Бейдж на головній і сторінці «Про нас»</span>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Керівник</label>
-              <input className="form-input" value={scForm.director || ''} onChange={e => setScForm(p => ({ ...p, director: e.target.value }))} placeholder="Дмитришин Анатолій Євгенович" />
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Опис у футері</label>
-            <textarea className="form-textarea" style={{ minHeight: '70px' }} value={scForm.tagline || ''} onChange={e => setScForm(p => ({ ...p, tagline: e.target.value }))} placeholder="Коротке описання підприємства для футеру..." />
-          </div>
-          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
-            {scSaving ? 'Збереження...' : 'Зберегти'}
-          </button>
-        </form>
-      </div>
+      )}
 
-      {/* Contacts */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3>Контактні дані</h3>
-          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Футер і сторінка «Про нас»</span>
-        </div>
-        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-            <div className="form-group">
-              <label className="form-label">Адреса</label>
-              <input className="form-input" value={scForm.address || ''} onChange={e => setScForm(p => ({ ...p, address: e.target.value }))} placeholder="вул. Клима Савури, 3, м. Тернопіль" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Телефон</label>
-              <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-34-75" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input className="form-input" value={scForm.email || ''} onChange={e => setScForm(p => ({ ...p, email: e.target.value }))} placeholder="info@nashdim-te.at.ua" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Режим роботи</label>
-              <input className="form-input" value={scForm.hours || ''} onChange={e => setScForm(p => ({ ...p, hours: e.target.value }))} placeholder="Пн–Чт: 8:00–17:15, Пт: 8:00–16:00" />
-            </div>
+      {/* ── Про нас ── */}
+      {settingsTab === 'about' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3>Сторінка «Про нас»</h3>
+            <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Текст розділу «Про підприємство»</span>
           </div>
-          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
-            {scSaving ? 'Збереження...' : 'Зберегти'}
-          </button>
-        </form>
-      </div>
+          <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
+            <div className="form-group">
+              <label className="form-label">Перший абзац</label>
+              <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText || ''} onChange={e => setScForm(p => ({ ...p, aboutText: e.target.value }))} placeholder="Головний опис підприємства..." />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Другий абзац</label>
+              <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
+            </div>
+            <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+              {scSaving ? 'Збереження...' : 'Зберегти'}
+            </button>
+          </form>
+        </div>
+      )}
 
-      {/* About page */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3>Сторінка «Про нас»</h3>
-          <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Текст розділу «Про підприємство»</span>
+      {/* ── Розділи ── */}
+      {settingsTab === 'sections' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <div>
+              <h3>Розділи сайту</h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--slate-500)', margin: '0.25rem 0 0' }}>
+                Вимкнені розділи зникають з навігації для відвідувачів
+              </p>
+            </div>
+          </div>
+          <div className="section-flags-list">
+            {SECTION_META.map(s => {
+              const enabled = sections[s.key] !== false;
+              return (
+                <div key={s.key} className={`section-flag-row ${enabled ? 'enabled' : 'disabled'}`}>
+                  <div className="section-flag-info">
+                    <span className="section-flag-label">{s.label}</span>
+                    <span className="section-flag-desc">{s.desc}</span>
+                  </div>
+                  <button
+                    className={`section-toggle ${enabled ? 'on' : 'off'}`}
+                    onClick={() => handleSectionToggle(s.key, !enabled)}
+                    aria-label={enabled ? 'Вимкнути' : 'Увімкнути'}
+                  >
+                    <span className="section-toggle-knob" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
-          <div className="form-group">
-            <label className="form-label">Перший абзац</label>
-            <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText || ''} onChange={e => setScForm(p => ({ ...p, aboutText: e.target.value }))} placeholder="Головний опис підприємства..." />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Другий абзац</label>
-            <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
-          </div>
-          <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
-            {scSaving ? 'Збереження...' : 'Зберегти'}
-          </button>
-        </form>
-      </div>
+      )}
 
     </div>
   );
@@ -1614,19 +1639,23 @@ function Admin() {
         </div>
 
         <nav className="admin-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`admin-nav-item ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => { setActive(item.id); setSidebarOpen(false); }}
-            >
-              {item.icon}
-              {item.label}
-              {item.id === 'requests' && stats?.newRequests > 0 && (
-                <span className="nav-badge">{stats.newRequests}</span>
-              )}
-            </button>
-          ))}
+          {navItems.map((item, i) =>
+            item.type === 'divider'
+              ? <div key={`div-${i}`} className="admin-nav-divider">{item.label}</div>
+              : (
+                <button
+                  key={item.id}
+                  className={`admin-nav-item ${activeSection === item.id ? 'active' : ''}`}
+                  onClick={() => { setActive(item.id); setSidebarOpen(false); }}
+                >
+                  {item.icon}
+                  {item.label}
+                  {item.id === 'requests' && stats?.newRequests > 0 && (
+                    <span className="nav-badge">{stats.newRequests}</span>
+                  )}
+                </button>
+              )
+          )}
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -1663,7 +1692,6 @@ function Admin() {
           {activeSection === 'services'  && renderServices()}
           {activeSection === 'news'      && renderNews()}
           {activeSection === 'gallery'   && renderGallery()}
-          {activeSection === 'sections'  && renderSections()}
           {activeSection === 'tariffs'   && renderTariffs()}
           {activeSection === 'emergency' && renderEmergency()}
           {activeSection === 'documents' && renderDocuments()}
