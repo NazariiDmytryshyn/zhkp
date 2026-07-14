@@ -84,7 +84,7 @@ function Home({ news, gallery, siteContent = {} }) {
   return (
     <div className="home-wrap">
       <Helmet>
-        <title>{siteContent.companyName || 'ПП «Наш Дім»'} Тернопіль — Управління житловим фондом</title>
+        <title>{siteContent.companyName || 'ПП «Наш Дім»'} Тернопіль — Управляюча компанія</title>
         <meta name="description" content="Приватне підприємство «Наш Дім» — управління та обслуговування житлового фонду міста Тернопіль з 2000 року. Подати заявку онлайн, новини, тарифи, аварійні контакти." />
         <link rel="canonical" href="https://nash-dim.ink/" />
       </Helmet>
