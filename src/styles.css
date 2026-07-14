@@ -3055,11 +3055,8 @@ a { color: inherit; text-decoration: none; }
 .emergency-note {
   font-size: 0.9375rem;
   color: var(--slate-700);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
-  min-height: 4rem;
+  line-height: 1.7;
 }
 
 /* ═══════════════════════════════════════════════
@@ -3312,9 +3309,9 @@ a { color: inherit; text-decoration: none; }
   }
   .emergency-note {
     font-size: 0.875rem;
-    padding: 1rem;
-    line-height: 1.6;
+    padding: 1rem 1.25rem;
   }
+  .content-block { padding: 1.25rem 1rem; }
   .tariff-table th,
   .tariff-table td { padding: 0.625rem 0.875rem; font-size: 0.875rem; }
   .ec-admin-row { flex-wrap: wrap; }
