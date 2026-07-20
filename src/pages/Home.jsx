@@ -100,12 +100,11 @@ function Home({ news, gallery, siteContent = {} }) {
         <div className="home-hero-content">
           <span className="home-hero-eyebrow">{siteContent.companyName || 'ПП «Наш Дім»'} — Тернопіль</span>
           <h1 className="home-hero-title">
-            Сучасний сервіс<br />
-            <span className="home-hero-title-accent">для вашого будинку</span>
+            {siteContent.heroTitle || 'Сучасний сервіс'}<br />
+            <span className="home-hero-title-accent">{siteContent.heroAccent || 'для вашого будинку'}</span>
           </h1>
           <p className="home-hero-desc">
-            Підтримка мешканців, оперативне реагування на заявки,<br className="home-hero-br" />
-            актуальні новини та прозора інформація про роботи у вашому районі.
+            {siteContent.heroDesc || 'Підтримка мешканців, оперативне реагування на заявки, актуальні новини та прозора інформація про роботи у вашому районі.'}
           </p>
           <div className="home-hero-actions">
             <Link to="/request" className="btn home-btn-primary">
@@ -117,8 +116,8 @@ function Home({ news, gallery, siteContent = {} }) {
           </div>
           <div className="home-hero-badges">
             <span className="home-hero-badge">{Icon.check} З {siteContent.founded || '2000'} року</span>
-            <span className="home-hero-badge">{Icon.check} 24/7 аварійна служба</span>
-            <span className="home-hero-badge">{Icon.check} Понад 50 будинків</span>
+            <span className="home-hero-badge">{Icon.check} {siteContent.heroBadge2 || '24/7 аварійна служба'}</span>
+            <span className="home-hero-badge">{Icon.check} {siteContent.heroBadge3 || 'Понад 50 будинків'}</span>
           </div>
         </div>
         <div className="home-hero-img-wrap">
@@ -130,15 +129,15 @@ function Home({ news, gallery, siteContent = {} }) {
           <div className="home-hero-img-card home-hero-img-card-1">
             <div className="home-hero-img-card-icon">{Icon.zap}</div>
             <div>
-              <div className="home-hero-img-card-val">~2 год</div>
-              <div className="home-hero-img-card-lbl">час реагування</div>
+              <div className="home-hero-img-card-val">{siteContent.heroCard1Val || '~2 год'}</div>
+              <div className="home-hero-img-card-lbl">{siteContent.heroCard1Lbl || 'час реагування'}</div>
             </div>
           </div>
           <div className="home-hero-img-card home-hero-img-card-2">
             <div className="home-hero-img-card-icon">{Icon.star}</div>
             <div>
-              <div className="home-hero-img-card-val">4.9 / 5</div>
-              <div className="home-hero-img-card-lbl">оцінка мешканців</div>
+              <div className="home-hero-img-card-val">{siteContent.heroCard2Val || '4.9 / 5'}</div>
+              <div className="home-hero-img-card-lbl">{siteContent.heroCard2Lbl || 'оцінка мешканців'}</div>
             </div>
           </div>
         </div>

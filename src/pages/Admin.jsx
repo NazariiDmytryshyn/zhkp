@@ -1565,6 +1565,58 @@ function Admin() {
               </button>
             </form>
           </div>
+
+          <div className="admin-card">
+            <div className="admin-card-header">
+              <h3>Головний банер</h3>
+              <span style={{ fontSize: '0.78rem', color: 'var(--slate-400)' }}>Синій блок у верхній частині головної сторінки</span>
+            </div>
+            <form className="admin-add-form" onSubmit={handleSaveSiteContent}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Заголовок (рядок 1)</label>
+                  <input className="form-input" value={scForm.heroTitle || ''} onChange={e => setScForm(p => ({ ...p, heroTitle: e.target.value }))} placeholder="Сучасний сервіс" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Заголовок (рядок 2, акцент)</label>
+                  <input className="form-input" value={scForm.heroAccent || ''} onChange={e => setScForm(p => ({ ...p, heroAccent: e.target.value }))} placeholder="для вашого будинку" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Опис</label>
+                <textarea className="form-textarea" style={{ minHeight: '70px' }} value={scForm.heroDesc || ''} onChange={e => setScForm(p => ({ ...p, heroDesc: e.target.value }))} placeholder="Підтримка мешканців, оперативне реагування..." />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Бейдж 2</label>
+                  <input className="form-input" value={scForm.heroBadge2 || ''} onChange={e => setScForm(p => ({ ...p, heroBadge2: e.target.value }))} placeholder="24/7 аварійна служба" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Бейдж 3</label>
+                  <input className="form-input" value={scForm.heroBadge3 || ''} onChange={e => setScForm(p => ({ ...p, heroBadge3: e.target.value }))} placeholder="Понад 50 будинків" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Картка 1 — значення</label>
+                  <input className="form-input" value={scForm.heroCard1Val || ''} onChange={e => setScForm(p => ({ ...p, heroCard1Val: e.target.value }))} placeholder="~2 год" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Картка 1 — підпис</label>
+                  <input className="form-input" value={scForm.heroCard1Lbl || ''} onChange={e => setScForm(p => ({ ...p, heroCard1Lbl: e.target.value }))} placeholder="час реагування" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Картка 2 — значення</label>
+                  <input className="form-input" value={scForm.heroCard2Val || ''} onChange={e => setScForm(p => ({ ...p, heroCard2Val: e.target.value }))} placeholder="4.9 / 5" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Картка 2 — підпис</label>
+                  <input className="form-input" value={scForm.heroCard2Lbl || ''} onChange={e => setScForm(p => ({ ...p, heroCard2Lbl: e.target.value }))} placeholder="оцінка мешканців" />
+                </div>
+              </div>
+              <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
+                {scSaving ? 'Збереження...' : 'Зберегти'}
+              </button>
+            </form>
+          </div>
         </>
       )}
 
