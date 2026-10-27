@@ -3,6 +3,7 @@ import { NavLink, Routes, Route, useNavigate, useLocation, Link } from 'react-ro
 import Home from './pages/Home.jsx';
 import About from './pages/About.jsx';
 import News from './pages/News.jsx';
+import NewsDetail from './pages/NewsDetail.jsx';
 import Gallery from './pages/Gallery.jsx';
 import Request from './pages/Request.jsx';
 import Services from './pages/Services.jsx';
@@ -31,6 +32,7 @@ function App() {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [sections, setSections] = useState({});
+  const [siteLoaded, setSiteLoaded] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,6 +57,8 @@ function App() {
         setSections(site.sections || {});
       } catch (error) {
         console.error('Не вдалося завантажити сайт:', error);
+      } finally {
+        setSiteLoaded(true);
       }
     };
 
@@ -121,6 +125,7 @@ function App() {
             <Route path="/" element={<Home news={news} gallery={gallery} siteContent={siteContent} />} />
             <Route path="/about" element={<About siteContent={siteContent} />} />
             <Route path="/news" element={<News news={news} />} />
+            <Route path="/news/:id" element={<NewsDetail news={news} loaded={siteLoaded} />} />
             <Route path="/gallery" element={<Gallery gallery={gallery} />} />
             <Route path="/services" element={<Services services={services} />} />
             <Route path="/tariffs" element={<Tariffs tariffs={tariffs} />} />

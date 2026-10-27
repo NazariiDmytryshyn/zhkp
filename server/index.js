@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, rename, mkdir, open, unlink } from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
@@ -28,14 +28,61 @@ const storage = multer.diskStorage({
   },
 });
 
+const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Дозволено тільки зображення'));
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (imageMimeTypes.includes(file.mimetype) && imageExtensions.includes(ext)) cb(null, true);
+    else cb(new Error('Дозволено тільки зображення: JPG, PNG, GIF, WebP, AVIF'));
   },
 });
+
+// Перевірка за вмістом файлу (сигнатура), а не лише за назвою — PDF з розширенням .jpg не пройде
+async function isRealImage(filePath) {
+  const fh = await open(filePath, 'r');
+  try {
+    const { buffer } = await fh.read(Buffer.alloc(16), 0, 16, 0);
+    const hex = buffer.toString('hex');
+    const ascii = buffer.toString('latin1');
+    return (
+      hex.startsWith('ffd8ff') ||                                   // JPEG
+      hex.startsWith('89504e470d0a1a0a') ||                         // PNG
+      ascii.startsWith('GIF87a') || ascii.startsWith('GIF89a') ||   // GIF
+      (ascii.startsWith('RIFF') && ascii.slice(8, 12) === 'WEBP') || // WebP
+      (ascii.slice(4, 8) === 'ftyp' && ascii.slice(8, 12).startsWith('avi')) // AVIF
+    );
+  } finally {
+    await fh.close();
+  }
+}
+
+const NEWS_TITLE_MAX = 100;
+const NEWS_SUMMARY_MAX = 300;
+const nonImageExt = /\.(pdf|docx?|xlsx?|pptx?|txt|zip|rar|svg|html?|js)$/i;
+
+function validateNews(body, { partial = false } = {}) {
+  if (!partial || body.title !== undefined) {
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    if (!title) return 'Заголовок обов\'язковий';
+    if (title.length > NEWS_TITLE_MAX) return `Заголовок не може бути довшим за ${NEWS_TITLE_MAX} символів`;
+  }
+  if (!partial || body.summary !== undefined) {
+    const summary = typeof body.summary === 'string' ? body.summary.trim() : '';
+    if (!summary) return 'Короткий опис обов\'язковий';
+    if (summary.length > NEWS_SUMMARY_MAX) return `Короткий опис не може бути довшим за ${NEWS_SUMMARY_MAX} символів`;
+  }
+  if (body.image) {
+    if (typeof body.image !== 'string') return 'Невірне зображення';
+    let pathname;
+    try { pathname = new URL(body.image, 'http://local').pathname; } catch { return 'Невірне посилання на зображення'; }
+    if (nonImageExt.test(pathname)) return 'Поле зображення приймає лише зображення (JPG, PNG, GIF, WebP, AVIF)';
+  }
+  return null;
+}
 
 const docMimeTypes = [
   'application/pdf',
@@ -184,17 +231,23 @@ const defaultData = {
 };
 
 async function loadData() {
+  let raw;
   try {
-    const raw = await readFile(dataPath, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
+    raw = await readFile(dataPath, 'utf-8');
+  } catch (err) {
+    // Дефолтні дані створюємо лише якщо файлу справді немає — ніколи не перезаписуємо існуючу базу
+    if (err.code !== 'ENOENT') throw err;
     await saveData(defaultData);
-    return defaultData;
+    return structuredClone(defaultData);
   }
+  return JSON.parse(raw);
 }
 
+// Атомарний запис: спершу у тимчасовий файл, потім rename — щоб data.json не залишився обрізаним
 async function saveData(data) {
-  await writeFile(dataPath, JSON.stringify(data, null, 2), 'utf-8');
+  const tmpPath = `${dataPath}.tmp`;
+  await writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  await rename(tmpPath, dataPath);
 }
 
 function authMiddleware(req, res, next) {
@@ -330,11 +383,25 @@ app.post('/api/admin/requests/:id/status', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/admin/news', authMiddleware, requireSuperadmin, async (req, res) => {
+  const error = validateNews(req.body);
+  if (error) return res.status(400).json({ error });
   const data = await loadData();
   const newsItem = { id: Date.now(), createdAt: new Date().toISOString(), ...req.body };
   data.news.unshift(newsItem);
   await saveData(data);
   res.json({ newsItem });
+});
+
+app.put('/api/admin/news/:id', authMiddleware, requireSuperadmin, async (req, res) => {
+  const error = validateNews(req.body, { partial: true });
+  if (error) return res.status(400).json({ error });
+  const data = await loadData();
+  const idx = data.news.findIndex((item) => item.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ error: 'Новину не знайдено' });
+  const { id, createdAt, ...changes } = req.body;
+  data.news[idx] = { ...data.news[idx], ...changes, updatedAt: new Date().toISOString() };
+  await saveData(data);
+  res.json({ newsItem: data.news[idx] });
 });
 
 app.delete('/api/admin/news/:id', authMiddleware, requireSuperadmin, async (req, res) => {
@@ -472,9 +539,16 @@ app.delete('/api/admin/services/:id', authMiddleware, requireSuperadmin, async (
   res.json({ ok: true });
 });
 
-app.post('/api/admin/upload', authMiddleware, requireSuperadmin, upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
-  res.json({ url: `/uploads/${req.file.filename}` });
+app.post('/api/admin/upload', authMiddleware, requireSuperadmin, (req, res) => {
+  upload.single('file')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
+    if (!(await isRealImage(req.file.path))) {
+      await unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: 'Файл не є зображенням' });
+    }
+    res.json({ url: `/uploads/${req.file.filename}` });
+  });
 });
 
 /* ── Tariffs ── */

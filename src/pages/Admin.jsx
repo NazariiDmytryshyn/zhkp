@@ -51,6 +51,30 @@ const STATUS_CSS = {
   'Відхиленна':     'status-відхиленна',
 };
 
+/* ─── News image helpers ─────────────────────────────────── */
+const NEWS_TITLE_MAX = 100;
+const NEWS_SUMMARY_MAX = 300;
+const IMAGE_ACCEPT = 'image/jpeg,image/png,image/gif,image/webp,image/avif';
+const IMAGE_TYPES = IMAGE_ACCEPT.split(',');
+const NON_IMAGE_EXT = /\.(pdf|docx?|xlsx?|pptx?|txt|zip|rar|svg|html?|js)$/i;
+const isImageFile = (f) => !!f && IMAGE_TYPES.includes(f.type);
+
+// Перевіряємо, що за посиланням справді зображення: браузер має змогу його відмалювати
+function checkImageUrl(url) {
+  let pathname = '';
+  try { pathname = new URL(url, window.location.origin).pathname; } catch { return Promise.resolve(false); }
+  if (NON_IMAGE_EXT.test(pathname)) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => resolve(false), 10000);
+    img.onload  = () => { clearTimeout(timer); resolve(img.naturalWidth > 0); };
+    img.onerror = () => { clearTimeout(timer); resolve(false); };
+    img.src = url;
+  });
+}
+
+const IMAGE_ERROR = 'Поле зображення приймає лише зображення (JPG, PNG, GIF, WebP, AVIF)';
+
 /* ─── Component ──────────────────────────────────────────── */
 function Admin() {
   const [token, setToken]             = useState(api.getToken());
@@ -109,7 +133,10 @@ function Admin() {
   const [srNoteValue, setSrNoteValue]     = useState('');
 
   /* forms */
-  const [newsForm, setNewsForm]         = useState({ title: '', summary: '', image: '' });
+  const [newsForm, setNewsForm]         = useState({ title: '', summary: '', content: '', image: '' });
+  const [editNewsId, setEditNewsId]     = useState(null);
+  const [editNewsForm, setEditNewsForm] = useState({});
+  const [editNewsUploading, setEditNewsUploading] = useState(false);
   const [newsImgMode, setNewsImgMode]   = useState('url');
   const [newsImgFile, setNewsImgFile]   = useState(null);
   const [newsImgPreview, setNewsImgPreview] = useState('');
@@ -310,13 +337,17 @@ function Admin() {
   const handleAddNews = async (e) => {
     e.preventDefault();
     try {
-      let imageUrl = newsForm.image;
+      let imageUrl = newsForm.image.trim();
       if (newsImgMode === 'file') {
         if (!newsImgFile) { showToast('Оберіть файл зображення', 'error'); return; }
+        if (!isImageFile(newsImgFile)) { showToast(IMAGE_ERROR, 'error'); return; }
         imageUrl = await api.uploadFile(newsImgFile, token);
+      } else {
+        if (!imageUrl) { showToast('Вкажіть посилання на зображення', 'error'); return; }
+        if (!(await checkImageUrl(imageUrl))) { showToast(IMAGE_ERROR, 'error'); return; }
       }
       await api.addNews({ ...newsForm, image: imageUrl }, token);
-      setNewsForm({ title: '', summary: '', image: '' });
+      setNewsForm({ title: '', summary: '', content: '', image: '' });
       setNewsImgFile(null);
       setNewsImgPreview('');
       setNewsImgMode('url');
@@ -324,6 +355,30 @@ function Admin() {
       await refreshData();
       showToast('Новину успішно додано');
     } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  const handleUpdateNews = async (e, id) => {
+    e.preventDefault();
+    try {
+      const { title, summary, content } = editNewsForm;
+      const image = (editNewsForm.image || '').trim();
+      if (image && !(await checkImageUrl(image))) { showToast(IMAGE_ERROR, 'error'); return; }
+      await api.updateNews(id, { title, summary, content: content || '', image: image || '' }, token);
+      setEditNewsId(null);
+      await refreshData();
+      showToast('Новину оновлено');
+    } catch (err) { showToast(err.message, 'error'); }
+  };
+
+  const handleEditNewsImageFile = async (file) => {
+    if (!file) return;
+    if (!isImageFile(file)) { showToast(IMAGE_ERROR, 'error'); return; }
+    setEditNewsUploading(true);
+    try {
+      const url = await api.uploadFile(file, token);
+      setEditNewsForm(p => ({ ...p, image: url }));
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setEditNewsUploading(false); }
   };
 
   const handleDeleteNews = async (id) => {
@@ -658,11 +713,17 @@ function Admin() {
           <form className="admin-add-form" onSubmit={handleAddNews}>
             <div className="form-group">
               <label className="form-label">Заголовок *</label>
-              <input className="form-input" value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} required />
+              <input className="form-input" maxLength={NEWS_TITLE_MAX} value={newsForm.title} onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })} required />
+              <span className="form-hint">{newsForm.title.length} / {NEWS_TITLE_MAX}</span>
             </div>
             <div className="form-group">
               <label className="form-label">Короткий опис *</label>
-              <textarea className="form-textarea" style={{ minHeight: '90px' }} value={newsForm.summary} onChange={(e) => setNewsForm({ ...newsForm, summary: e.target.value })} required />
+              <textarea className="form-textarea" style={{ minHeight: '90px' }} maxLength={NEWS_SUMMARY_MAX} value={newsForm.summary} onChange={(e) => setNewsForm({ ...newsForm, summary: e.target.value })} required />
+              <span className="form-hint">{newsForm.summary.length} / {NEWS_SUMMARY_MAX}</span>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Повний текст (необов'язково)</label>
+              <RichEditor extended key="add-news" value={newsForm.content} onChange={html => setNewsForm(p => ({ ...p, content: html }))} />
             </div>
             <div className="form-group">
               <label className="form-label">Зображення *</label>
@@ -679,16 +740,21 @@ function Admin() {
                   onDrop={(e) => {
                     e.preventDefault();
                     const f = e.dataTransfer.files[0];
-                    if (f && f.type.startsWith('image/')) { setNewsImgFile(f); setNewsImgPreview(URL.createObjectURL(f)); }
+                    if (!f) return;
+                    if (!isImageFile(f)) { showToast(IMAGE_ERROR, 'error'); return; }
+                    setNewsImgFile(f); setNewsImgPreview(URL.createObjectURL(f));
                   }}
                 >
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                  <input type="file" accept={IMAGE_ACCEPT} style={{ display: 'none' }} onChange={(e) => {
                     const f = e.target.files[0];
-                    if (f) { setNewsImgFile(f); setNewsImgPreview(URL.createObjectURL(f)); }
+                    e.target.value = '';
+                    if (!f) return;
+                    if (!isImageFile(f)) { showToast(IMAGE_ERROR, 'error'); return; }
+                    setNewsImgFile(f); setNewsImgPreview(URL.createObjectURL(f));
                   }} />
                   {newsImgPreview
                     ? <img className="file-drop-preview" src={newsImgPreview} alt="preview" />
-                    : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>PNG, JPG, WebP до 10 МБ</small></>
+                    : <>{Icon.upload}<p>Клікніть або перетягніть файл</p><small>JPG, PNG, GIF, WebP, AVIF до 10 МБ</small></>
                   }
                 </label>
               )}
@@ -704,7 +770,39 @@ function Admin() {
           <div className="empty-state">{Icon.news}<p>Новин поки що немає</p></div>
         ) : (
           <div className="news-admin-list">
-            {news.map((item) => (
+            {news.map((item) => editNewsId === item.id ? (
+              <form key={item.id} className="admin-add-form" style={{ borderTop: '1px solid var(--slate-100)', padding: '1.25rem 1.5rem' }} onSubmit={e => handleUpdateNews(e, item.id)}>
+                <div className="form-group">
+                  <label className="form-label">Заголовок *</label>
+                  <input className="form-input" maxLength={NEWS_TITLE_MAX} value={editNewsForm.title || ''} onChange={e => setEditNewsForm({ ...editNewsForm, title: e.target.value })} required />
+                  <span className="form-hint">{(editNewsForm.title || '').length} / {NEWS_TITLE_MAX}</span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Короткий опис *</label>
+                  <textarea className="form-textarea" style={{ minHeight: '90px' }} maxLength={NEWS_SUMMARY_MAX} value={editNewsForm.summary || ''} onChange={e => setEditNewsForm({ ...editNewsForm, summary: e.target.value })} required />
+                  <span className="form-hint">{(editNewsForm.summary || '').length} / {NEWS_SUMMARY_MAX}</span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Повний текст (необов'язково)</label>
+                  <RichEditor extended key={`edit-news-${item.id}`} value={editNewsForm.content || ''} onChange={html => setEditNewsForm(p => ({ ...p, content: html }))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Зображення</label>
+                  <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input className="form-input" style={{ flex: 1, minWidth: '200px' }} value={editNewsForm.image || ''} onChange={e => setEditNewsForm({ ...editNewsForm, image: e.target.value })} placeholder="https://..." />
+                    <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                      <input type="file" accept={IMAGE_ACCEPT} style={{ display: 'none' }} onChange={e => { handleEditNewsImageFile(e.target.files[0]); e.target.value = ''; }} />
+                      {Icon.upload} {editNewsUploading ? 'Завантаження...' : "З комп'ютера"}
+                    </label>
+                  </div>
+                  {editNewsForm.image && <img className="file-drop-preview" style={{ marginTop: '0.625rem', maxHeight: '160px' }} src={editNewsForm.image} alt="preview" />}
+                </div>
+                <div style={{ display: 'flex', gap: '0.625rem' }}>
+                  <button className="btn btn-primary btn-sm" type="submit" disabled={editNewsUploading}>Зберегти</button>
+                  <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditNewsId(null)}>Скасувати</button>
+                </div>
+              </form>
+            ) : (
               <div key={item.id} className="news-admin-item">
                 {item.image
                   ? <img className="news-admin-thumb" src={item.image} alt={item.title} />
@@ -715,9 +813,14 @@ function Admin() {
                   <div className="news-admin-date">{formatDate(item.createdAt || item.id)}</div>
                 </div>
                 {user.role === 'superadmin' && (
-                  <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteNews(item.id)} title="Видалити">
-                    {Icon.trash}
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditNewsId(item.id); setEditNewsForm({ ...item }); }} title="Редагувати">
+                      {Icon.edit}
+                    </button>
+                    <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteNews(item.id)} title="Видалити">
+                      {Icon.trash}
+                    </button>
+                  </div>
                 )}
               </div>
             ))}

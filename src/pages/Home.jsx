@@ -224,8 +224,9 @@ function Home({ news, gallery, siteContent = {} }) {
           </div>
           <div className="home-news-grid">
             {news.slice(0, 3).map((item, i) => (
-              <article
+              <Link
                 key={item.id}
+                to={`/news/${item.id}`}
                 className={`home-news-card anim-up${newsInView ? ' visible' : ''}`}
                 style={{ transitionDelay: `${i * 100}ms` }}
               >
@@ -239,7 +240,7 @@ function Home({ news, gallery, siteContent = {} }) {
                   <h4>{item.title}</h4>
                   <p>{item.summary}</p>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
           <div className="home-section-more">

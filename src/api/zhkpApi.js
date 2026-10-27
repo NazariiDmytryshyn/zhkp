@@ -78,6 +78,12 @@ export async function addNews(payload, token) {
   return result;
 }
 
+export async function updateNews(id, payload, token) {
+  const result = await request(`/admin/news/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
 export async function deleteNews(id, token) {
   const result = await request(`/admin/news/${id}`, { method: 'DELETE', token });
   window.dispatchEvent(new Event('zhkp-data-updated'));

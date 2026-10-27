@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 
 function formatDate(ts) {
   if (!ts) return '';
@@ -30,7 +31,7 @@ function News({ news }) {
       ) : (
         <div className="card-grid">
           {news.map((item) => (
-            <article key={item.id} className="news-card">
+            <Link key={item.id} to={`/news/${item.id}`} className="news-card">
               {item.image && (
                 <img className="news-card-img" src={item.image} alt={item.title} />
               )}
@@ -41,7 +42,7 @@ function News({ news }) {
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       )}
