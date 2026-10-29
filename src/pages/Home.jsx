@@ -46,7 +46,7 @@ function LatestNews({ items }) {
 
 function Home({ news, gallery, siteContent = {}, buildings, sections }) {
   const mine = useMyBuilding(buildings);
-  const { sos } = sitePhones(siteContent);
+  const { sos, sosHours } = sitePhones(siteContent);
   const founded = parseInt(siteContent.founded, 10) || 2000;
   const houses = buildings.length || parseInt(siteContent.statHouses, 10) || 50;
   const on = (k) => sections[k] !== false;
@@ -103,11 +103,14 @@ function Home({ news, gallery, siteContent = {}, buildings, sections }) {
             <span className="ink-2">Сантехніка, електрика, догляд за зеленими насадженнями</span>
           </Link>
         )}
-        <a className="qa qa--sos" href={telHref(sos)}>
-          <span className="nd-tile"><Icon name="phone" size="lg" /></span>
-          <span className="t-h3" style={{ color: 'var(--danger-ink)' }}>Аварійна 24/7</span>
-          <span className="t-num" style={{ color: 'var(--danger-ink)', fontWeight: 600, fontSize: 18 }}>{sos}</span>
-        </a>
+        {sos && (
+          <a className="qa qa--sos" href={telHref(sos)}>
+            <span className="nd-tile"><Icon name="phone" size="lg" /></span>
+            <span className="t-h3" style={{ color: 'var(--danger-ink)' }}>Аварійна служба</span>
+            <span className="t-num" style={{ color: 'var(--danger-ink)', fontWeight: 600, fontSize: 18 }}>{sos}</span>
+            {sosHours && <span className="t-small" style={{ color: 'var(--danger-ink)' }}>{sosHours}</span>}
+          </a>
+        )}
       </div>
 
       <div className="stats" style={{ marginTop: 24 }}>

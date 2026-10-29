@@ -265,7 +265,7 @@ function Tariffs({ buildings, tariffs, siteContent, loaded }) {
           {filtered.length === 0 && loaded && (
             <div className="empty" style={{ borderTop: '1px solid var(--line)' }}>
               <p>Будинку з такою адресою немає в нашому обслуговуванні</p>
-              <p className="t-small" style={{ marginTop: 4 }}>Перевірте номер або зателефонуйте: {sos}</p>
+              <p className="t-small" style={{ marginTop: 4 }}>Перевірте номер{sos ? ` або зателефонуйте: ${sos}` : ''}</p>
             </div>
           )}
         </div>

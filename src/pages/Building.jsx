@@ -21,7 +21,7 @@ function Building({ buildings, news, siteContent, loaded }) {
   const [tab, setTab] = useState('now');
   const [area, setArea] = useState(() => readStored(AREA_KEY, '54'));
   const today = todayISO();
-  const { phone } = sitePhones(siteContent);
+  const { contact: phone } = sitePhones(siteContent);
 
   useEffect(() => { setTab('now'); }, [id]);
   useEffect(() => { writeStored(AREA_KEY, area); }, [area]);
@@ -124,7 +124,7 @@ function Building({ buildings, news, siteContent, loaded }) {
           {outages.length > 0 && <div className="only-sm" style={{ flexDirection: 'column', gap: 12, marginBottom: 24 }}>{outageNotices}</div>}
           {!cur && !nxt ? (
             <>
-              <div className="panel empty"><p>Тариф для цього будинку ще не внесено</p><p className="t-small" style={{ marginTop: 4 }}>Уточніть у диспетчера: {phone}</p></div>
+              <div className="panel empty"><p>Тариф для цього будинку ще не внесено</p>{phone && <p className="t-small" style={{ marginTop: 4 }}>Уточніть у диспетчера: {phone}</p>}</div>
               {reports.length > 0 && <><h2 className="t-h2" style={{ marginTop: 32 }}>Звіти</h2>{reportsList}</>}
             </>
           ) : (
@@ -243,7 +243,7 @@ function Building({ buildings, news, siteContent, loaded }) {
             <div className="t-label">Обслуговує</div>
             <div style={{ fontWeight: 600, fontSize: 18, lineHeight: '26px' }}>{b.dp || siteContent.companyName || 'ПП «Наш Дім»'}</div>
             {b.master && <div className="info-row"><Icon name="user" />Майстер дільниці: {b.master}</div>}
-            <div className="info-row"><Icon name="phone" /><a href={telHref(b.phone || phone)}>{b.phone || phone}</a></div>
+            {(b.phone || phone) && <div className="info-row"><Icon name="phone" /><a href={telHref(b.phone || phone)}>{b.phone || phone}</a></div>}
             <Link className="nd-btn nd-btn--primary nd-btn--block" to={`/request?address=${encodeURIComponent(`${fullAddr(b)}, кв. `)}`} style={{ marginTop: 8 }}>Залишити заявку</Link>
           </div>
 

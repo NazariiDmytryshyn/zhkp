@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../api/zhkpApi.js';
 import RichEditor from '../components/RichEditor.jsx';
-import { SERVICE_CATEGORIES, serviceCat } from '../serviceCategories.js';
+import { SERVICE_CATEGORIES, priceUnit, serviceCat } from '../serviceCategories.js';
 import BuildingsAdmin from './admin/BuildingsAdmin.jsx';
 import ServicesExcel from './admin/ServicesExcel.jsx';
 import NewsMetaFields, { NEWS_META_DEFAULTS, newsMetaPayload } from './admin/NewsMetaFields.jsx';
@@ -81,7 +81,7 @@ function checkImageUrl(url) {
 const IMAGE_ERROR = 'Поле зображення приймає лише зображення (JPG, PNG, GIF, WebP, AVIF)';
 
 const EMPTY_NEWS = { title: '', summary: '', content: '', image: '', ...NEWS_META_DEFAULTS };
-const EMPTY_SVC = { title: '', category: 'other', group: '', unit: '', summary: '', description: '', price: '', image: '', features: '', uses: '', specs: '' };
+const EMPTY_SVC = { title: '', category: 'other', pinned: false, group: '', unit: '', summary: '', description: '', price: '', image: '', features: '', uses: '', specs: '' };
 
 // Послуга: масиви ↔ текст у формі (кожен пункт з нового рядка)
 const lines = (t) => (t || '').split('\n').map((l) => l.trim()).filter(Boolean);
@@ -988,9 +988,11 @@ function Admin() {
   /* ════════════════ SERVICES ════════════════ */
   const filteredSr = srFilter === 'all' ? serviceReqs : serviceReqs.filter(r => r.status === srFilter);
 
+  // Закріплені — першими, як і на сайті
   const visibleServices = services.filter(s =>
     (svcCatFilter === 'all' || serviceCat(s).key === svcCatFilter) &&
-    (!svcQuery.trim() || `${s.title} ${s.group || ''}`.toLowerCase().includes(svcQuery.trim().toLowerCase())));
+    (!svcQuery.trim() || `${s.title} ${s.group || ''}`.toLowerCase().includes(svcQuery.trim().toLowerCase())))
+    .map((s, i) => ({ s, i })).sort((a, b) => (b.s.pinned ? 1 : 0) - (a.s.pinned ? 1 : 0) || a.i - b.i).map(({ s }) => s);
 
   const renderServices = () => (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -1086,6 +1088,10 @@ function Admin() {
                 <label className="form-label">Чому з нами / переваги (кожна з нового рядка; «Безпека. Пояснення» — перше речення буде жирним)</label>
                 <textarea className="form-textarea" style={{ minHeight: '90px' }} value={svcForm.features} onChange={e => setSvcForm({ ...svcForm, features: e.target.value })} placeholder={"Висота до 18 м\nОператор у вартості\nВиїзд по місту"} />
               </div>
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 }}>
+                <input type="checkbox" checked={!!svcForm.pinned} onChange={e => setSvcForm(p => ({ ...p, pinned: e.target.checked }))} /> Закріпити зверху
+                <span className="form-hint" style={{ fontWeight: 400 }}>— показується першою в прайс-листі, у блоці «Популярне»</span>
+              </label>
               <div style={{ display: 'flex', gap: '0.625rem' }}>
                 <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
                 <button className="btn btn-ghost btn-sm" type="button" onClick={() => setShowSvcF(false)}>Скасувати</button>
@@ -1151,6 +1157,10 @@ function Admin() {
                         <label className="form-label">Чому з нами / переваги (кожна з нового рядка; «Безпека. Пояснення» — перше речення буде жирним)</label>
                         <textarea className="form-textarea" style={{ minHeight: '90px' }} value={editSvcForm.features} onChange={e => setEditSvcForm({ ...editSvcForm, features: e.target.value })} />
                       </div>
+                      <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.9rem', fontWeight: 600 }}>
+                        <input type="checkbox" checked={!!editSvcForm.pinned} onChange={e => setEditSvcForm(p => ({ ...p, pinned: e.target.checked }))} /> Закріпити зверху
+                        <span className="form-hint" style={{ fontWeight: 400 }}>— показується першою в прайс-листі, у блоці «Популярне»</span>
+                      </label>
                       <div style={{ display: 'flex', gap: '0.625rem' }}>
                         <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
                         <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditSvcId(null)}>Скасувати</button>
@@ -1163,9 +1173,9 @@ function Admin() {
                         : <div className="service-admin-thumb" style={{ background: 'var(--blue-100)' }} />
                       }
                       <div className="service-admin-info">
-                        <div className="service-admin-title">{s.title}</div>
+                        <div className="service-admin-title">{s.pinned && <span title="Закріплено зверху" style={{ color: 'var(--blue-700)' }}>★ </span>}{s.title}</div>
                         <div className="service-admin-price">
-                          {[s.price ? `${s.price}${s.unit ? ` / ${s.unit}` : ''}` : '—', serviceCat(s).label, s.group].filter(Boolean).join(' · ')}
+                          {[s.price ? `${s.price}${priceUnit(s) ? ` / ${priceUnit(s)}` : ''}` : '—', serviceCat(s).label, s.group].filter(Boolean).join(' · ')}
                         </div>
                       </div>
                       {user.role === 'superadmin' && (
@@ -1498,7 +1508,7 @@ function Admin() {
               </div>
               <div className="form-group">
                 <label className="form-label">Режим роботи</label>
-                <input className="form-input" value={ecForm.available} onChange={e => setECForm(p => ({ ...p, available: e.target.value }))} placeholder="24/7" />
+                <input className="form-input" value={ecForm.available} onChange={e => setECForm(p => ({ ...p, available: e.target.value }))} placeholder="Пн–Пт 17:00–8:00, Сб–Нд цілодобово" />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.625rem' }}>
@@ -1906,12 +1916,22 @@ function Admin() {
               </div>
               <div className="form-group">
                 <label className="form-label">Телефон</label>
-                <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-34-75" />
+                <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 00-00-00" />
               </div>
               <div className="form-group">
-                <label className="form-label">Аварійний телефон 24/7</label>
-                <input className="form-input" value={scForm.emergencyPhone || ''} onChange={e => setScForm(p => ({ ...p, emergencyPhone: e.target.value }))} placeholder="(0352) 24-34-75" />
-                <span className="form-hint">Червона кнопка вгорі сайту. Якщо порожньо — використовується основний телефон.</span>
+                <label className="form-label">Аварійний телефон</label>
+                <input className="form-input" value={scForm.emergencyPhone || ''} onChange={e => setScForm(p => ({ ...p, emergencyPhone: e.target.value }))} placeholder="+38 (068) 000 00 00" />
+                <span className="form-hint">Червона кнопка вгорі сайту і блок «Аварійна служба». Якщо порожньо — використовується основний телефон.</span>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Телефон для замовлення послуг</label>
+                <input className="form-input" value={scForm.servicesPhone || ''} onChange={e => setScForm(p => ({ ...p, servicesPhone: e.target.value }))} placeholder="+38 (098) 000 00 00" />
+                <span className="form-hint">Кнопка з номером на сторінці кожної послуги. Якщо порожньо — основний телефон.</span>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Графік аварійної служби</label>
+                <input className="form-input" value={scForm.emergencyHours || ''} onChange={e => setScForm(p => ({ ...p, emergencyHours: e.target.value }))} placeholder="Пн–Пт 17:00–8:00, Сб–Нд цілодобово" />
+                <span className="form-hint">Показується біля аварійного номера: вгорі сайту, на сторінці «Аварійна служба», на головній і у футері.</span>
               </div>
               <div className="form-group">
                 <label className="form-label">Email</label>

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
-import { SERVICE_CATEGORIES, serviceCat } from '../serviceCategories.js';
+import { SERVICE_CATEGORIES, priceUnit, serviceCat } from '../serviceCategories.js';
 import { plural } from '../lib/buildings.js';
 import { stripHtml } from '../lib/news.js';
 import { readStored, writeStored } from '../lib/myBuilding.js';
@@ -27,13 +27,15 @@ function Services({ services }) {
     const list = (cat === 'all' ? byQuery : byQuery.filter((s) => serviceCat(s).key === cat)).map((s, i) => ({ s, i }));
     const groupOrder = new Map();
     list.forEach(({ s }) => { const g = `${serviceCat(s).key}|${s.group || ''}`; if (!groupOrder.has(g)) groupOrder.set(g, groupOrder.size); });
-    return list.sort((a, b) => (CAT_ORDER[serviceCat(a.s).key] - CAT_ORDER[serviceCat(b.s).key])
+    // Закріплені («Популярне») — завжди першими
+    return list.sort((a, b) => ((b.s.pinned ? 1 : 0) - (a.s.pinned ? 1 : 0))
+      || (CAT_ORDER[serviceCat(a.s).key] - CAT_ORDER[serviceCat(b.s).key])
       || (groupOrder.get(`${serviceCat(a.s).key}|${a.s.group || ''}`) - groupOrder.get(`${serviceCat(b.s).key}|${b.s.group || ''}`))
       || a.i - b.i).map(({ s }) => s);
   }, [byQuery, cat]);
 
   // Заголовки груп у прайс-листі: «Сантехніка · Каналізаційні мережі»
-  const groupLabel = (s) => [cat === 'all' ? serviceCat(s).label : '', s.group].filter(Boolean).join(' · ');
+  const groupLabel = (s) => (s.pinned ? 'Популярне' : [cat === 'all' ? serviceCat(s).label : '', s.group].filter(Boolean).join(' · '));
 
   const cats = [{ key: 'all', label: 'Усі послуги', count: byQuery.length }, ...SERVICE_CATEGORIES.map((c) => ({
     ...c, count: byQuery.filter((s) => serviceCat(s).key === c.key).length,
@@ -96,7 +98,7 @@ function Services({ services }) {
                       <p className="nd-service__title">{s.title}</p>
                       <p className="nd-service__desc">{serviceSummary(s)}</p>
                       <div className="nd-service__foot">
-                        {s.price && <span className="nd-service__price">{s.price}{s.unit && <span className="muted" style={{ fontWeight: 400 }}> / {s.unit}</span>}</span>}
+                        {s.price && <span className="nd-service__price">{s.price}{priceUnit(s) && <span className="muted" style={{ fontWeight: 400 }}> / {priceUnit(s)}</span>}</span>}
                         <span className="nd-badge nd-badge--neutral">{c.label}</span>
                       </div>
                     </div>

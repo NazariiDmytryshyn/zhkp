@@ -16,7 +16,7 @@ const norm = (s = '') => s.toLowerCase().replace(/[«»"'\s-]/g, '');
 const ext = (url = '') => url.split('.').pop().toUpperCase().slice(0, 4);
 
 function About({ siteContent = {}, buildings = [], documents = [] }) {
-  const { phone } = sitePhones(siteContent);
+  const { phone, sos, sosHours } = sitePhones(siteContent);
   const founded = siteContent.founded || '2000';
   const houses = buildings.length || siteContent.statHouses;
   const subs = (siteContent.subsidiaries || []).filter((s) => s.name);
@@ -104,10 +104,11 @@ function About({ siteContent = {}, buildings = [], documents = [] }) {
           <div className="split__side" style={docs.length ? undefined : { maxWidth: 560 }}>
             <h2 className="t-h2">Контакти</h2>
             <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="ct"><span className="nd-tile"><Icon name="pin" /></span><div><p className="t-small">Адреса</p><p style={{ fontWeight: 600 }}>{siteContent.address || 'вул. Клима Савури, 3, Тернопіль'}</p></div></div>
-              <div className="ct"><span className="nd-tile"><Icon name="phone" /></span><div><p className="t-small">Телефон</p><a className="t-num" style={{ fontWeight: 600, textDecoration: 'none' }} href={telHref(phone)}>{phone}</a></div></div>
+              {siteContent.address && <div className="ct"><span className="nd-tile"><Icon name="pin" /></span><div><p className="t-small">Адреса</p><p style={{ fontWeight: 600 }}>{siteContent.address}</p></div></div>}
+              {phone && <div className="ct"><span className="nd-tile"><Icon name="phone" /></span><div><p className="t-small">Телефон</p><a className="t-num" style={{ fontWeight: 600, textDecoration: 'none' }} href={telHref(phone)}>{phone}</a></div></div>}
+              {sos && sos !== phone && <div className="ct"><span className="nd-tile" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}><Icon name="phone" /></span><div><p className="t-small">Аварійна служба{sosHours ? ` · ${sosHours}` : ''}</p><a className="t-num" style={{ fontWeight: 600, textDecoration: 'none' }} href={telHref(sos)}>{sos}</a></div></div>}
               {siteContent.email && <div className="ct"><span className="nd-tile"><Icon name="mail" /></span><div><p className="t-small">Email</p><a style={{ fontWeight: 600, textDecoration: 'none' }} href={`mailto:${siteContent.email}`}>{siteContent.email}</a></div></div>}
-              <div className="ct"><span className="nd-tile"><Icon name="clock" /></span><div><p className="t-small">Режим роботи</p><p style={{ fontWeight: 600 }}>{siteContent.hours || 'Пн–Чт 8:00–17:15, Пт 8:00–16:00'}</p></div></div>
+              {siteContent.hours && <div className="ct"><span className="nd-tile"><Icon name="clock" /></span><div><p className="t-small">Режим роботи</p><p style={{ fontWeight: 600 }}>{siteContent.hours}</p></div></div>}
             </div>
           </div>
         </div>

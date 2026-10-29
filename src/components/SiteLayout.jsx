@@ -6,9 +6,14 @@ import { shortAddr } from '../lib/buildings.js';
 
 const telHref = (phone = '') => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
+// Контакти беруться лише з налаштувань адмінки — нічого не зашито в коді.
+// sosHours — графік аварійної служби (вона працює не цілодобово).
 export function sitePhones(siteContent = {}) {
-  const phone = siteContent.phone || '+380 (352) 24-34-75';
-  return { phone, sos: siteContent.emergencyPhone || phone };
+  const phone = (siteContent.phone || '').trim();
+  const sos = (siteContent.emergencyPhone || '').trim() || phone;
+  // contact — номер для «зателефонувати нам»: основний, а якщо його не вказано — аварійний
+  const servicesPhone = (siteContent.servicesPhone || '').trim() || phone || sos;
+  return { phone, sos, contact: phone || sos, servicesPhone, sosHours: (siteContent.emergencyHours || '').trim() };
 }
 
 function navItems(sections, documents) {
@@ -27,7 +32,7 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
   const location = useLocation();
   const navigate = useNavigate();
   const mine = useMyBuilding(buildings);
-  const { sos } = sitePhones(siteContent);
+  const { sos, sosHours } = sitePhones(siteContent);
   const items = navItems(sections, documents).filter((i) => !i.footerOnly);
   const name = siteContent.companyName || 'Наш Дім';
 
@@ -40,11 +45,13 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
     <>
       <div className="nd-topbar">
         <div className="nd-topbar__in wrap">
-          <Link className="nd-topbar__sos" to="/emergency">
-            <Icon name="phone" size="sm" /> Аварійна 24/7: {sos}
-          </Link>
-          <span>{siteContent.hours || 'Пн–Чт 8:00–17:15, Пт 8:00–16:00'}</span>
-          <span className="nd-topbar__addr">{siteContent.address || 'вул. Клима Савури, 3'}</span>
+          {sos && (
+            <Link className="nd-topbar__sos" to="/emergency">
+              <Icon name="phone" size="sm" /> Аварійна: {sos}
+            </Link>
+          )}
+          {sosHours && <span>{sosHours}</span>}
+          {siteContent.address && <span className="nd-topbar__addr">{siteContent.address}</span>}
         </div>
       </div>
       <header className="nd-header">
@@ -90,7 +97,7 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
 }
 
 export function SiteFooter({ siteContent = {}, sections = {}, documents = [] }) {
-  const { phone, sos } = sitePhones(siteContent);
+  const { phone, sos, sosHours } = sitePhones(siteContent);
   const company = siteContent.companyName || 'ПП «Наш Дім»';
   const on = (k) => sections[k] !== false;
   return (
@@ -124,11 +131,11 @@ export function SiteFooter({ siteContent = {}, sections = {}, documents = [] }) 
           <div>
             <div className="nd-footer__h">Контакти</div>
             <ul>
-              <li className="sos"><a href={telHref(sos)}>Аварійна 24/7: {sos}</a></li>
-              {phone !== sos && <li><a href={telHref(phone)}>{phone}</a></li>}
-              <li>{siteContent.address || 'вул. Клима Савури, 3, Тернопіль'}</li>
+              {sos && <li className="sos"><a href={telHref(sos)}>Аварійна служба: {sos}</a>{sosHours && <div style={{ fontWeight: 400 }}>{sosHours}</div>}</li>}
+              {phone && phone !== sos && <li><a href={telHref(phone)}>{phone}</a></li>}
+              {siteContent.address && <li>{siteContent.address}</li>}
               {siteContent.email && <li><a href={`mailto:${siteContent.email}`}>{siteContent.email}</a></li>}
-              <li>{siteContent.hours || 'Пн–Чт 8:00–17:15, Пт 8:00–16:00'}</li>
+              {siteContent.hours && <li>Режим роботи: {siteContent.hours}</li>}
             </ul>
           </div>
         </div>

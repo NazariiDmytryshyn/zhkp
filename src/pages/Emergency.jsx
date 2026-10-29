@@ -5,26 +5,33 @@ import { sitePhones, telHref } from '../components/SiteLayout.jsx';
 const CITY = [['101', 'Пожежна'], ['102', 'Поліція'], ['103', 'Швидка'], ['104', 'Газова служба']];
 
 function Emergency({ emergencyContacts = [], siteContent = {} }) {
-  const { sos } = sitePhones(siteContent);
+  const { sos, sosHours } = sitePhones(siteContent);
   return (
     <>
       <Helmet>
         <title>Аварійна служба — ПП «Наш Дім» Тернопіль</title>
-        <meta name="description" content="Телефони аварійних служб ПП «Наш Дім» Тернопіль: сантехніка, електрика, газ. Цілодобово." />
+        <meta name="description" content="Телефони аварійних служб ПП «Наш Дім» Тернопіль: сантехніка, електрика, газ." />
         <link rel="canonical" href="https://nash-dim.ink/emergency" />
       </Helmet>
 
       <h1 className="t-h1">Аварійна служба</h1>
       <p className="t-lead" style={{ marginTop: 8 }}>Затоплення, немає світла чи води, запах газу — телефонуйте одразу.</p>
 
-      <a className="nd-notice nd-notice--danger" href={telHref(sos)} style={{ marginTop: 24, alignItems: 'center' }}>
-        <span className="nd-notice__ico"><Icon name="phone" /></span>
-        <div className="nd-notice__body">
-          <p className="nd-notice__title">Аварійна 24/7</p>
-          <p className="sos-card__phone" style={{ color: 'var(--danger-ink)' }}>{sos}</p>
-        </div>
-        <span className="nd-btn nd-btn--danger nd-btn--sm">Подзвонити</span>
-      </a>
+      {sos && (
+        <a className="nd-notice nd-notice--danger" href={telHref(sos)} style={{ marginTop: 24, alignItems: 'center' }}>
+          <span className="nd-notice__ico"><Icon name="phone" /></span>
+          <div className="nd-notice__body">
+            <p className="nd-notice__title">Аварійна служба</p>
+            <p className="sos-card__phone" style={{ color: 'var(--danger-ink)' }}>{sos}</p>
+            {sosHours && (
+              <p className="nd-notice__meta" style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+                <Icon name="clock" size="sm" /> {sosHours}
+              </p>
+            )}
+          </div>
+          <span className="nd-btn nd-btn--danger nd-btn--sm">Подзвонити</span>
+        </a>
+      )}
 
       {emergencyContacts.length > 0 && (
         <div className="g2" style={{ marginTop: 24 }}>

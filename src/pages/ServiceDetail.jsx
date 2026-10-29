@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import Icon from '../components/Icon.jsx';
 import ServiceOrderModal from '../components/ServiceOrderModal.jsx';
 import { sitePhones, telHref } from '../components/SiteLayout.jsx';
-import { serviceCat } from '../serviceCategories.js';
+import { priceUnit, serviceCat } from '../serviceCategories.js';
 import { serviceSummary } from './Services.jsx';
 import { useMyBuilding } from '../lib/myBuilding.js';
 import { fullAddr } from '../lib/buildings.js';
@@ -25,7 +25,8 @@ function ServiceDetail({ services, siteContent, buildings, loaded }) {
   const s = services.find((x) => String(x.id) === id);
   const [ordering, setOrdering] = useState(false);
   const mine = useMyBuilding(buildings);
-  const { phone } = sitePhones(siteContent);
+  // Для послуг — окремий номер з налаштувань («Телефон для замовлення послуг»)
+  const { servicesPhone: phone } = sitePhones(siteContent);
 
   if (!s) {
     if (!loaded) return null;
@@ -104,7 +105,7 @@ function ServiceDetail({ services, siteContent, buildings, loaded }) {
           <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16, boxShadow: 'var(--shadow-md)' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
               <span className="t-num" style={{ font: '700 32px/38px var(--font-display)' }}>{s.price || 'Ціна за домовленістю'}</span>
-              {s.price && s.unit && <span className="ink-2" style={{ fontSize: 18 }}>/ {s.unit}</span>}
+              {priceUnit(s) && <span className="ink-2" style={{ fontSize: 18 }}>/ {priceUnit(s)}</span>}
             </div>
             {!s.description && !s.summary && <p className="t-small">Остаточну вартість майстер підтверджує на місці.</p>}
             {specs.length > 0 && (
@@ -113,7 +114,7 @@ function ServiceDetail({ services, siteContent, buildings, loaded }) {
               </div>
             )}
             <button type="button" className="nd-btn nd-btn--primary nd-btn--block" onClick={() => setOrdering(true)}>Замовити послугу</button>
-            <a className="nd-btn nd-btn--secondary nd-btn--block" href={telHref(phone)}><Icon name="phone" /> {phone}</a>
+            {phone && <a className="nd-btn nd-btn--secondary nd-btn--block" href={telHref(phone)}><Icon name="phone" /> {phone}</a>}
           </div>
 
           {similar.length > 0 && (
