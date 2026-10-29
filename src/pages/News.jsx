@@ -1,52 +1,71 @@
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import NewsCard from '../components/NewsCard.jsx';
+import Pager, { usePaged } from '../components/Pager.jsx';
+import { NEWS_CATEGORIES, appliesTo } from '../lib/news.js';
+import { useMyBuilding } from '../lib/myBuilding.js';
+import { shortAddr } from '../lib/buildings.js';
 
-function formatDate(ts) {
-  if (!ts) return '';
-  return new Date(ts).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+const PAGE = 9;
 
-function News({ news }) {
+function News({ news, buildings, loaded }) {
+  const [params, setParams] = useSearchParams();
+  const cat = NEWS_CATEGORIES.some((c) => c.key === params.get('cat')) ? params.get('cat') : 'all';
+  const [onlyMine, setOnlyMine] = useState(false);
+  const mine = useMyBuilding(buildings);
+  const mineOn = onlyMine && !!mine;
+
+  const sorted = useMemo(() => [...news].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')), [news]);
+  const base = mineOn ? sorted.filter((n) => appliesTo(n, mine.id)) : sorted;
+  const items = cat === 'all' ? base : base.filter((n) => (n.category || 'ann') === cat);
+  const paged = usePaged(items, PAGE, `${cat}|${mineOn}`);
+
+  const chips = [{ key: 'all', label: 'Усі', count: base.length }, ...NEWS_CATEGORIES.map((c) => ({
+    key: c.key, label: c.label, count: base.filter((n) => (n.category || 'ann') === c.key).length,
+  }))];
+
+  const pick = (key) => setParams(key === 'all' ? {} : { cat: key }, { replace: true });
+
   return (
-    <section className="page page-news">
+    <>
       <Helmet>
         <title>Новини — ПП «Наш Дім» Тернопіль</title>
-        <meta name="description" content="Останні новини та оголошення ПП «Наш Дім» Тернопіль. Інформація про планові роботи, відключення, події." />
+        <meta name="description" content="Відключення, роботи й оголошення по будинках ПП «Наш Дім» Тернопіль." />
         <link rel="canonical" href="https://nash-dim.ink/news" />
       </Helmet>
-      <div className="section-header">
-        <div>
-          <h2>Новини</h2>
-          <p>Останні повідомлення про роботу ЖКП, графіки відключень та оновлення.</p>
-        </div>
-      </div>
 
-      {news.length === 0 ? (
-        <div className="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/><polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <p>Новин поки що немає.</p>
-        </div>
-      ) : (
-        <div className="card-grid">
-          {news.map((item) => (
-            <Link key={item.id} to={`/news/${item.id}`} className="news-card">
-              {item.image && (
-                <img className="news-card-img" src={item.image} alt={item.title} />
-              )}
-              <div className="news-card-body">
-                {item.createdAt && (
-                  <div className="news-card-date">{formatDate(item.createdAt)}</div>
-                )}
-                <h3>{item.title}</h3>
-                <p>{item.summary}</p>
-              </div>
-            </Link>
+      <h1 className="t-h1">Новини</h1>
+      <p className="t-lead" style={{ marginTop: 8 }}>Відключення, роботи й оголошення по будинках.</p>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
+        <div className="nd-chips">
+          {chips.map((c) => (
+            <button key={c.key} type="button" className="nd-chip" aria-pressed={cat === c.key} onClick={() => pick(c.key)}>
+              {c.label} <span className="nd-chip__count">{c.count}</span>
+            </button>
           ))}
         </div>
+        {mine && (
+          <button type="button" className="tgl" aria-pressed={mineOn} onClick={() => setOnlyMine((v) => !v)}>
+            <i />Лише {shortAddr(mine)}
+          </button>
+        )}
+      </div>
+
+      {items.length > 0 ? (
+        <div className="g3" style={{ marginTop: 24 }}>
+          {paged.visible.map((n) => <NewsCard key={n.id} item={n} />)}
+        </div>
+      ) : loaded && (
+        <div className="panel empty" style={{ marginTop: 24 }}>
+          <p>{mineOn ? 'Для вашого будинку тут нічого немає' : 'Новин у цій категорії поки немає'}</p>
+          {mineOn && <p className="t-small" style={{ marginTop: 4 }}>Вимкніть «Лише {shortAddr(mine)}», щоб побачити всі новини.</p>}
+        </div>
       )}
-    </section>
+
+      <Pager paged={paged} pageSize={PAGE} label={(p) => `Сторінка ${p.page} з ${p.pages}`} />
+    </>
   );
 }
 

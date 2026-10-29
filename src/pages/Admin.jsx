@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as api from '../api/zhkpApi.js';
 import RichEditor from '../components/RichEditor.jsx';
+import { SERVICE_CATEGORIES, serviceCat } from '../serviceCategories.js';
+import BuildingsAdmin from './admin/BuildingsAdmin.jsx';
+import ServicesExcel from './admin/ServicesExcel.jsx';
+import NewsMetaFields, { NEWS_META_DEFAULTS, newsMetaPayload } from './admin/NewsMetaFields.jsx';
+import { newsBadge } from '../lib/news.js';
 import { io } from 'socket.io-client';
 
 /* ─── Icons ─────────────────────────────────────────────── */
@@ -75,6 +80,26 @@ function checkImageUrl(url) {
 
 const IMAGE_ERROR = 'Поле зображення приймає лише зображення (JPG, PNG, GIF, WebP, AVIF)';
 
+const EMPTY_NEWS = { title: '', summary: '', content: '', image: '', ...NEWS_META_DEFAULTS };
+const EMPTY_SVC = { title: '', category: 'other', group: '', unit: '', summary: '', description: '', price: '', image: '', features: '', uses: '', specs: '' };
+
+// Послуга: масиви ↔ текст у формі (кожен пункт з нового рядка)
+const lines = (t) => (t || '').split('\n').map((l) => l.trim()).filter(Boolean);
+const svcToForm = (s) => ({
+  ...EMPTY_SVC, ...s,
+  category: serviceCat(s).key,
+  features: (s.features || []).join('\n'),
+  uses: (s.uses || []).map((u) => (u.text ? `${u.title} — ${u.text}` : u.title)).join('\n'),
+  specs: (s.specs || []).map((x) => `${x.label}: ${x.value}`).join('\n'),
+});
+const svcFromForm = (f) => ({
+  ...f,
+  summary: (f.summary || '').trim(),
+  features: lines(f.features),
+  uses: lines(f.uses).map((l) => { const [title, ...rest] = l.split(/\s+[—–-]\s+/); return { title: title.trim(), text: rest.join(' — ').trim() }; }),
+  specs: lines(f.specs).map((l) => { const i = l.indexOf(':'); return i === -1 ? { label: l, value: '' } : { label: l.slice(0, i).trim(), value: l.slice(i + 1).trim() }; }),
+});
+
 /* ─── Component ──────────────────────────────────────────── */
 function Admin() {
   const [token, setToken]             = useState(api.getToken());
@@ -104,6 +129,11 @@ function Admin() {
   const [tariffs, setTariffs]           = useState([]);
   const [emergencyContacts, setEC]      = useState([]);
   const [documents, setDocuments]       = useState([]);
+  const [buildings, setBuildings]       = useState([]);
+  const [tariffTab, setTariffTab]       = useState('buildings');
+  const [buildingEditing, setBuildingEditing] = useState(false);
+  const [editPhotoId, setEditPhotoId]   = useState(null);
+  const [photoCaption, setPhotoCaption] = useState({ title: '', place: '', date: '' });
 
   /* tariffs */
   const [showTariffForm, setShowTariffF]  = useState(false);
@@ -125,15 +155,17 @@ function Admin() {
   /* services ui */
   const [serviceTab, setServiceTab]       = useState('catalog');
   const [showServiceForm, setShowSvcF]    = useState(false);
-  const [svcForm, setSvcForm]             = useState({ title: '', description: '', price: '', image: '', features: '' });
+  const [svcForm, setSvcForm]             = useState(EMPTY_SVC);
   const [editSvcId, setEditSvcId]         = useState(null);
   const [editSvcForm, setEditSvcForm]     = useState({});
   const [srFilter, setSrFilter]           = useState('all');
+  const [svcQuery, setSvcQuery]           = useState('');
+  const [svcCatFilter, setSvcCatFilter]   = useState('all');
   const [editingSrNote, setEditSrNote]    = useState(null);
   const [srNoteValue, setSrNoteValue]     = useState('');
 
   /* forms */
-  const [newsForm, setNewsForm]         = useState({ title: '', summary: '', content: '', image: '' });
+  const [newsForm, setNewsForm]         = useState(EMPTY_NEWS);
   const [editNewsId, setEditNewsId]     = useState(null);
   const [editNewsForm, setEditNewsForm] = useState({});
   const [editNewsUploading, setEditNewsUploading] = useState(false);
@@ -141,6 +173,7 @@ function Admin() {
   const [newsImgFile, setNewsImgFile]   = useState(null);
   const [newsImgPreview, setNewsImgPreview] = useState('');
   const [photoUrl, setPhotoUrl]         = useState('');
+  const [photoMeta, setPhotoMeta]       = useState({ title: '', place: '', date: '' });
   const [galleryMode, setGalleryMode]   = useState('url');
   const [galleryFile, setGalleryFile]   = useState(null);
   const [galleryFilePreview, setGalleryFilePreview] = useState('');
@@ -210,12 +243,14 @@ function Admin() {
   const refreshData = useCallback(async () => {
     if (!user || !token) return;
     try {
-      const [requestsData, siteData, statsData, srData] = await Promise.all([
+      const [requestsData, siteData, statsData, srData, buildingsData] = await Promise.all([
         api.getAdminRequests(token),
         api.getSite(),
         api.getStats(token),
         api.getServiceRequests(token),
+        api.getBuildings(),
       ]);
+      setBuildings(buildingsData || []);
       setRequests(requestsData);
       setNews(siteData.news || []);
       setGallery(siteData.gallery || []);
@@ -280,9 +315,8 @@ function Admin() {
   const handleAddService = async (e) => {
     e.preventDefault();
     try {
-      const features = svcForm.features.split('\n').map(f => f.trim()).filter(Boolean);
-      await api.addService({ ...svcForm, features }, token);
-      setSvcForm({ title: '', description: '', price: '', image: '', features: '' });
+      await api.addService(svcFromForm(svcForm), token);
+      setSvcForm(EMPTY_SVC);
       setShowSvcF(false);
       await refreshData();
       showToast('Послугу додано');
@@ -292,8 +326,7 @@ function Admin() {
   const handleUpdateService = async (e, id) => {
     e.preventDefault();
     try {
-      const features = editSvcForm.features.split('\n').map(f => f.trim()).filter(Boolean);
-      await api.updateService(id, { ...editSvcForm, features }, token);
+      await api.updateService(id, svcFromForm(editSvcForm), token);
       setEditSvcId(null);
       await refreshData();
       showToast('Послугу оновлено');
@@ -338,16 +371,15 @@ function Admin() {
     e.preventDefault();
     try {
       let imageUrl = newsForm.image.trim();
-      if (newsImgMode === 'file') {
-        if (!newsImgFile) { showToast('Оберіть файл зображення', 'error'); return; }
+      if (newsImgMode === 'file' && newsImgFile) {
         if (!isImageFile(newsImgFile)) { showToast(IMAGE_ERROR, 'error'); return; }
         imageUrl = await api.uploadFile(newsImgFile, token);
-      } else {
-        if (!imageUrl) { showToast('Вкажіть посилання на зображення', 'error'); return; }
-        if (!(await checkImageUrl(imageUrl))) { showToast(IMAGE_ERROR, 'error'); return; }
-      }
-      await api.addNews({ ...newsForm, image: imageUrl }, token);
-      setNewsForm({ title: '', summary: '', content: '', image: '' });
+      } else if (newsImgMode === 'file') {
+        imageUrl = '';
+      } else if (imageUrl && !(await checkImageUrl(imageUrl))) { showToast(IMAGE_ERROR, 'error'); return; }
+      const { title, summary, content } = newsForm;
+      await api.addNews({ title, summary, content, image: imageUrl, ...newsMetaPayload(newsForm) }, token);
+      setNewsForm(EMPTY_NEWS);
       setNewsImgFile(null);
       setNewsImgPreview('');
       setNewsImgMode('url');
@@ -363,7 +395,7 @@ function Admin() {
       const { title, summary, content } = editNewsForm;
       const image = (editNewsForm.image || '').trim();
       if (image && !(await checkImageUrl(image))) { showToast(IMAGE_ERROR, 'error'); return; }
-      await api.updateNews(id, { title, summary, content: content || '', image: image || '' }, token);
+      await api.updateNews(id, { title, summary, content: content || '', image: image || '', ...newsMetaPayload(editNewsForm) }, token);
       setEditNewsId(null);
       await refreshData();
       showToast('Новину оновлено');
@@ -398,8 +430,9 @@ function Admin() {
         if (!galleryFile) { showToast('Оберіть файл зображення', 'error'); return; }
         url = await api.uploadFile(galleryFile, token);
       }
-      await api.addGalleryPhoto({ url }, token);
+      await api.addGalleryPhoto({ url, ...photoMeta }, token);
       setPhotoUrl('');
+      setPhotoMeta({ title: '', place: '', date: '' });
       setGalleryFile(null);
       setGalleryFilePreview('');
       setGalleryMode('url');
@@ -407,6 +440,16 @@ function Admin() {
       await refreshData();
       showToast('Фото додано до галереї');
     } catch (e) { showToast(e.message, 'error'); }
+  };
+
+  const handleSaveCaption = async (e, id) => {
+    e.preventDefault();
+    try {
+      await api.updateGalleryPhoto(id, photoCaption, token);
+      setEditPhotoId(null);
+      await refreshData();
+      showToast('Підпис збережено');
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleDeletePhoto = async (id) => {
@@ -553,6 +596,7 @@ function Admin() {
             { label: 'Виконані',       value: stats.completedRequests,   color: 'green',  icon: Icon.check },
             { label: 'Відхилені',      value: stats.rejectedRequests,    color: 'red',    icon: Icon.close },
             { label: 'Новин',          value: stats.totalNews,           color: 'purple', icon: Icon.news  },
+            { label: 'Будинків',       value: stats.totalBuildings ?? 0, color: 'blue',   icon: Icon.house },
           ].map((s) => (
             <div key={s.label} className={`stat-card ${s.color}`}>
               <div className={`stat-icon ${s.color}`}>{s.icon}</div>
@@ -627,6 +671,7 @@ function Admin() {
                     <span className="request-name">{r.name}</span>
                     <span className="request-address">{r.address}</span>
                     <span className="request-phone">{r.phone}</span>
+                    {r.email && <a className="request-phone" href={`mailto:${r.email}`}>{r.email}</a>}
                   </div>
                   <div className="request-message">{r.message}</div>
                   {r.createdAt && <div className="request-date">{formatDate(r.createdAt)}</div>}
@@ -725,8 +770,9 @@ function Admin() {
               <label className="form-label">Повний текст (необов'язково)</label>
               <RichEditor extended key="add-news" value={newsForm.content} onChange={html => setNewsForm(p => ({ ...p, content: html }))} />
             </div>
+            <NewsMetaFields value={newsForm} buildings={buildings} onChange={(patch) => setNewsForm(p => ({ ...p, ...patch }))} />
             <div className="form-group">
-              <label className="form-label">Зображення *</label>
+              <label className="form-label">Зображення (необов'язково)</label>
               <div className="upload-mode-tabs">
                 <button type="button" className={`upload-mode-tab ${newsImgMode === 'url' ? 'active' : ''}`} onClick={() => setNewsImgMode('url')}>URL-посилання</button>
                 <button type="button" className={`upload-mode-tab ${newsImgMode === 'file' ? 'active' : ''}`} onClick={() => setNewsImgMode('file')}>З комп'ютера</button>
@@ -761,7 +807,7 @@ function Admin() {
             </div>
             <div style={{ display: 'flex', gap: '0.625rem' }}>
               <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
-              <button className="btn btn-ghost btn-sm" type="button" onClick={() => { setShowNews(false); setNewsImgFile(null); setNewsImgPreview(''); setNewsImgMode('url'); }}>Скасувати</button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => { setShowNews(false); setNewsForm(EMPTY_NEWS); setNewsImgFile(null); setNewsImgPreview(''); setNewsImgMode('url'); }}>Скасувати</button>
             </div>
           </form>
         )}
@@ -786,6 +832,7 @@ function Admin() {
                   <label className="form-label">Повний текст (необов'язково)</label>
                   <RichEditor extended key={`edit-news-${item.id}`} value={editNewsForm.content || ''} onChange={html => setEditNewsForm(p => ({ ...p, content: html }))} />
                 </div>
+                <NewsMetaFields value={editNewsForm} buildings={buildings} onChange={(patch) => setEditNewsForm(p => ({ ...p, ...patch }))} />
                 <div className="form-group">
                   <label className="form-label">Зображення</label>
                   <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -810,7 +857,7 @@ function Admin() {
                 }
                 <div>
                   <div className="news-admin-title">{item.title}</div>
-                  <div className="news-admin-date">{formatDate(item.createdAt || item.id)}</div>
+                  <div className="news-admin-date">{[newsBadge(item).label, item.createdAt && formatDate(item.createdAt), item.where].filter(Boolean).join(' · ')}</div>
                 </div>
                 {user.role === 'superadmin' && (
                   <div style={{ display: 'flex', gap: '0.375rem' }}>
@@ -879,6 +926,14 @@ function Admin() {
                 </label>
               )}
             </div>
+            <div className="form-group">
+              <label className="form-label">Підпис (необов'язково)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.2fr 0.8fr', gap: '0.625rem' }}>
+                <input className="form-input" maxLength={120} value={photoMeta.title} onChange={(e) => setPhotoMeta((p) => ({ ...p, title: e.target.value }))} placeholder="Що зроблено: Покрівля" aria-label="Підпис" />
+                <input className="form-input" maxLength={120} value={photoMeta.place} onChange={(e) => setPhotoMeta((p) => ({ ...p, place: e.target.value }))} placeholder="Адреса: Білогірська, 5" aria-label="Адреса" />
+                <input className="form-input" type="month" value={photoMeta.date} onChange={(e) => setPhotoMeta((p) => ({ ...p, date: e.target.value }))} aria-label="Місяць" />
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: '0.625rem' }}>
               <button className="btn btn-primary btn-sm" type="submit">Додати</button>
               <button className="btn btn-ghost btn-sm" type="button" onClick={() => { setShowPhoto(false); setGalleryFile(null); setGalleryFilePreview(''); setGalleryMode('url'); }}>Скасувати</button>
@@ -891,12 +946,36 @@ function Admin() {
         ) : (
           <div className="gallery-admin-grid">
             {gallery.map((item) => (
-              <div key={item.id} className="gallery-admin-item">
-                <img src={item.url} alt={`Фото ${item.id}`} />
-                {user.role === 'superadmin' && (
-                  <button className="gallery-admin-delete" onClick={() => handleDeletePhoto(item.id)} title="Видалити">
-                    {Icon.close}
-                  </button>
+              <div key={item.id} style={{ display: 'grid', gap: 6, alignContent: 'start' }}>
+                <div className="gallery-admin-item">
+                  <img src={item.url} alt={item.title || `Фото ${item.id}`} />
+                  {user.role === 'superadmin' && (
+                    <button className="gallery-admin-delete" onClick={() => handleDeletePhoto(item.id)} title="Видалити">
+                      {Icon.close}
+                    </button>
+                  )}
+                </div>
+                {editPhotoId === item.id ? (
+                  <form onSubmit={(e) => handleSaveCaption(e, item.id)} style={{ display: 'grid', gap: 6 }}>
+                    <input className="form-input" maxLength={120} value={photoCaption.title} onChange={(e) => setPhotoCaption((p) => ({ ...p, title: e.target.value }))} placeholder="Що зроблено" aria-label="Підпис" />
+                    <input className="form-input" maxLength={120} value={photoCaption.place} onChange={(e) => setPhotoCaption((p) => ({ ...p, place: e.target.value }))} placeholder="Адреса" aria-label="Адреса" />
+                    <input className="form-input" type="month" value={photoCaption.date} onChange={(e) => setPhotoCaption((p) => ({ ...p, date: e.target.value }))} aria-label="Місяць" />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-primary btn-sm" type="submit">Зберегти</button>
+                      <button className="btn btn-ghost btn-sm" type="button" onClick={() => setEditPhotoId(null)}>Скасувати</button>
+                    </div>
+                  </form>
+                ) : (
+                  <div style={{ fontSize: '0.82rem', lineHeight: 1.35 }}>
+                    {item.title ? <strong>{item.title}</strong> : <span style={{ color: 'var(--slate-400)' }}>Без підпису</span>}
+                    {(item.place || item.date) && <div style={{ color: 'var(--slate-500)' }}>{[item.place, item.date].filter(Boolean).join(' · ')}</div>}
+                    {user.role === 'superadmin' && (
+                      <button type="button" className="btn btn-ghost btn-sm" style={{ padding: '0.15rem 0.4rem', marginTop: 2 }}
+                        onClick={() => { setEditPhotoId(item.id); setPhotoCaption({ title: item.title || '', place: item.place || '', date: item.date || '' }); }}>
+                        {Icon.edit} Підпис
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
@@ -908,6 +987,10 @@ function Admin() {
 
   /* ════════════════ SERVICES ════════════════ */
   const filteredSr = srFilter === 'all' ? serviceReqs : serviceReqs.filter(r => r.status === srFilter);
+
+  const visibleServices = services.filter(s =>
+    (svcCatFilter === 'all' || serviceCat(s).key === svcCatFilter) &&
+    (!svcQuery.trim() || `${s.title} ${s.group || ''}`.toLowerCase().includes(svcQuery.trim().toLowerCase())));
 
   const renderServices = () => (
     <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -928,15 +1011,27 @@ function Admin() {
       </div>
 
       {/* ── CATALOG ── */}
+      {serviceTab === 'catalog' && user.role === 'superadmin' && (
+        <ServicesExcel services={services} token={token} showToast={showToast} refresh={refreshData} />
+      )}
+
       {serviceTab === 'catalog' && (
         <div className="admin-card">
+          <datalist id="svc-groups">{[...new Set(services.map(s => s.group).filter(Boolean))].map(g => <option key={g} value={g} />)}</datalist>
           <div className="admin-card-header">
-            <h3>Список послуг</h3>
-            {user.role === 'superadmin' && (
-              <button className="btn btn-primary btn-sm" onClick={() => setShowSvcF(p => !p)}>
-                {Icon.plus} Додати послугу
-              </button>
-            )}
+            <h3>Список послуг ({visibleServices.length})</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select className="form-select" style={{ width: 'auto' }} value={svcCatFilter} onChange={e => setSvcCatFilter(e.target.value)} aria-label="Категорія">
+                <option value="all">Усі категорії</option>
+                {SERVICE_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+              </select>
+              <input className="form-input" style={{ width: 200 }} value={svcQuery} onChange={e => setSvcQuery(e.target.value)} placeholder="Пошук послуги" aria-label="Пошук послуги" />
+              {user.role === 'superadmin' && (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowSvcF(p => !p)}>
+                  {Icon.plus} Додати послугу
+                </button>
+              )}
+            </div>
           </div>
 
           {showServiceForm && user.role === 'superadmin' && (
@@ -948,8 +1043,28 @@ function Admin() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Ціна</label>
-                  <input className="form-input" value={svcForm.price} onChange={e => setSvcForm({ ...svcForm, price: e.target.value })} placeholder="від 500 грн/год" />
+                  <input className="form-input" value={svcForm.price} onChange={e => setSvcForm({ ...svcForm, price: e.target.value })} placeholder="від 500 грн" />
                 </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr', gap: '0.875rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Категорія</label>
+                  <select className="form-select" value={svcForm.category || 'other'} onChange={e => setSvcForm({ ...svcForm, category: e.target.value })}>
+                    {SERVICE_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Розділ прайсу</label>
+                  <input className="form-input" list="svc-groups" value={svcForm.group || ''} onChange={e => setSvcForm({ ...svcForm, group: e.target.value })} placeholder="Каналізаційні мережі" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Одиниця</label>
+                  <input className="form-input" value={svcForm.unit || ''} onChange={e => setSvcForm({ ...svcForm, unit: e.target.value })} placeholder="шт., м.п., виклик" />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Короткий опис (для картки)</label>
+                <textarea className="form-textarea" style={{ minHeight: '60px' }} maxLength={220} value={svcForm.summary || ''} onChange={e => setSvcForm(p => ({ ...p, summary: e.target.value }))} placeholder="Одне-два речення: що це за послуга" />
               </div>
               <div className="form-group">
                 <label className="form-label">Опис *</label>
@@ -960,7 +1075,15 @@ function Admin() {
                 <input className="form-input" value={svcForm.image} onChange={e => setSvcForm({ ...svcForm, image: e.target.value })} placeholder="https://..." />
               </div>
               <div className="form-group">
-                <label className="form-label">Переваги (кожна з нового рядка)</label>
+                <label className="form-label">Для яких робіт (кожен пункт з нового рядка: «Назва — опис»)</label>
+                <textarea className="form-textarea" style={{ minHeight: '80px' }} value={svcForm.uses || ''} onChange={e => setSvcForm(p => ({ ...p, uses: e.target.value }))} placeholder={"Благоустрій — обрізка аварійних дерев\nЕлектромонтаж — вуличні ліхтарі"} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Характеристики (кожна з нового рядка: «Назва: значення»)</label>
+                <textarea className="form-textarea" style={{ minHeight: '70px' }} value={svcForm.specs || ''} onChange={e => setSvcForm(p => ({ ...p, specs: e.target.value }))} placeholder={"Мінімальне замовлення: 2 год\nВисота підйому: до 18 м"} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Чому з нами / переваги (кожна з нового рядка; «Безпека. Пояснення» — перше речення буде жирним)</label>
                 <textarea className="form-textarea" style={{ minHeight: '90px' }} value={svcForm.features} onChange={e => setSvcForm({ ...svcForm, features: e.target.value })} placeholder={"Висота до 18 м\nОператор у вартості\nВиїзд по місту"} />
               </div>
               <div style={{ display: 'flex', gap: '0.625rem' }}>
@@ -970,11 +1093,11 @@ function Admin() {
             </form>
           )}
 
-          {services.length === 0 ? (
-            <div className="empty-state">{Icon.briefcase}<p>Послуг ще немає</p></div>
+          {visibleServices.length === 0 ? (
+            <div className="empty-state">{Icon.briefcase}<p>{services.length ? 'Нічого не знайдено' : 'Послуг ще немає'}</p></div>
           ) : (
             <div className="service-admin-list">
-              {services.map(s => (
+              {visibleServices.map(s => (
                 <div key={s.id}>
                   {editSvcId === s.id ? (
                     <form className="admin-add-form" style={{ borderTop: '1px solid var(--slate-100)', padding: '1.25rem 1.5rem' }} onSubmit={e => handleUpdateService(e, s.id)}>
@@ -988,6 +1111,26 @@ function Admin() {
                           <input className="form-input" value={editSvcForm.price} onChange={e => setEditSvcForm({ ...editSvcForm, price: e.target.value })} />
                         </div>
                       </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr', gap: '0.875rem' }}>
+                        <div className="form-group">
+                          <label className="form-label">Категорія</label>
+                          <select className="form-select" value={editSvcForm.category || 'other'} onChange={e => setEditSvcForm({ ...editSvcForm, category: e.target.value })}>
+                            {SERVICE_CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Розділ прайсу</label>
+                          <input className="form-input" list="svc-groups" value={editSvcForm.group || ''} onChange={e => setEditSvcForm({ ...editSvcForm, group: e.target.value })} placeholder="Каналізаційні мережі" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Одиниця</label>
+                          <input className="form-input" value={editSvcForm.unit || ''} onChange={e => setEditSvcForm({ ...editSvcForm, unit: e.target.value })} placeholder="шт., м.п., виклик" />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Короткий опис (для картки)</label>
+                        <textarea className="form-textarea" style={{ minHeight: '60px' }} maxLength={220} value={editSvcForm.summary || ''} onChange={e => setEditSvcForm(p => ({ ...p, summary: e.target.value }))} placeholder="Одне-два речення: що це за послуга" />
+                      </div>
                       <div className="form-group">
                         <label className="form-label">Опис *</label>
                         <RichEditor key={`edit-${s.id}`} value={editSvcForm.description} onChange={html => setEditSvcForm(p => ({ ...p, description: html }))} />
@@ -997,7 +1140,15 @@ function Admin() {
                         <input className="form-input" value={editSvcForm.image} onChange={e => setEditSvcForm({ ...editSvcForm, image: e.target.value })} />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Переваги (кожна з нового рядка)</label>
+                        <label className="form-label">Для яких робіт (кожен пункт з нового рядка: «Назва — опис»)</label>
+                        <textarea className="form-textarea" style={{ minHeight: '80px' }} value={editSvcForm.uses || ''} onChange={e => setEditSvcForm(p => ({ ...p, uses: e.target.value }))} placeholder={"Благоустрій — обрізка аварійних дерев\nЕлектромонтаж — вуличні ліхтарі"} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Характеристики (кожна з нового рядка: «Назва: значення»)</label>
+                        <textarea className="form-textarea" style={{ minHeight: '70px' }} value={editSvcForm.specs || ''} onChange={e => setEditSvcForm(p => ({ ...p, specs: e.target.value }))} placeholder={"Мінімальне замовлення: 2 год\nВисота підйому: до 18 м"} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Чому з нами / переваги (кожна з нового рядка; «Безпека. Пояснення» — перше речення буде жирним)</label>
                         <textarea className="form-textarea" style={{ minHeight: '90px' }} value={editSvcForm.features} onChange={e => setEditSvcForm({ ...editSvcForm, features: e.target.value })} />
                       </div>
                       <div style={{ display: 'flex', gap: '0.625rem' }}>
@@ -1013,11 +1164,13 @@ function Admin() {
                       }
                       <div className="service-admin-info">
                         <div className="service-admin-title">{s.title}</div>
-                        <div className="service-admin-price">{s.price || '—'}</div>
+                        <div className="service-admin-price">
+                          {[s.price ? `${s.price}${s.unit ? ` / ${s.unit}` : ''}` : '—', serviceCat(s).label, s.group].filter(Boolean).join(' · ')}
+                        </div>
                       </div>
                       {user.role === 'superadmin' && (
                         <div style={{ display: 'flex', gap: '0.375rem' }}>
-                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditSvcId(s.id); setEditSvcForm({ ...s, features: s.features?.join('\n') || '' }); }} title="Редагувати">
+                          <button className="btn btn-ghost btn-icon btn-sm" onClick={() => { setEditSvcId(s.id); setEditSvcForm(svcToForm(s)); }} title="Редагувати">
                             {Icon.edit}
                           </button>
                           <button className="btn btn-danger btn-icon btn-sm" onClick={() => handleDeleteService(s.id)} title="Видалити">
@@ -1174,7 +1327,22 @@ function Admin() {
     } catch (err) { showToast(err.message, 'error'); }
   };
 
-  const renderTariffs = () => {
+  const renderTariffs = () => (
+    <div style={{ display: 'grid', gap: '1.25rem' }}>
+      {!buildingEditing && (
+        <div className="settings-tabs">
+          {[['buildings', `Будинки і тарифи (${buildings.length})`], ['general', `Інші тарифи (${tariffs.length})`]].map(([id, label]) => (
+            <button key={id} type="button" className={`settings-tab ${tariffTab === id ? 'active' : ''}`} onClick={() => setTariffTab(id)}>{label}</button>
+          ))}
+        </div>
+      )}
+      {tariffTab === 'buildings'
+        ? <BuildingsAdmin buildings={buildings} documents={documents} token={token} showToast={showToast} refresh={refreshData} canEdit={user.role === 'superadmin'} onEditingChange={setBuildingEditing} />
+        : renderGeneralTariffs()}
+    </div>
+  );
+
+  const renderGeneralTariffs = () => {
     const categories = [...new Set(tariffs.map(t => t.category || 'Інше'))];
     return (
       <div style={{ display: 'grid', gap: '1.25rem' }}>
@@ -1741,6 +1909,11 @@ function Admin() {
                 <input className="form-input" value={scForm.phone || ''} onChange={e => setScForm(p => ({ ...p, phone: e.target.value }))} placeholder="+380 (352) 24-34-75" />
               </div>
               <div className="form-group">
+                <label className="form-label">Аварійний телефон 24/7</label>
+                <input className="form-input" value={scForm.emergencyPhone || ''} onChange={e => setScForm(p => ({ ...p, emergencyPhone: e.target.value }))} placeholder="(0352) 24-34-75" />
+                <span className="form-hint">Червона кнопка вгорі сайту. Якщо порожньо — використовується основний телефон.</span>
+              </div>
+              <div className="form-group">
                 <label className="form-label">Email</label>
                 <input className="form-input" value={scForm.email || ''} onChange={e => setScForm(p => ({ ...p, email: e.target.value }))} placeholder="info@nashdim-te.at.ua" />
               </div>
@@ -1771,6 +1944,22 @@ function Admin() {
             <div className="form-group">
               <label className="form-label">Другий абзац</label>
               <textarea className="form-textarea" style={{ minHeight: '100px' }} value={scForm.aboutText2 || ''} onChange={e => setScForm(p => ({ ...p, aboutText2: e.target.value }))} placeholder="Додаткова інформація..." />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Дочірні підприємства</label>
+              {(scForm.subsidiaries || []).map((sub, i) => {
+                const upd = (patch) => setScForm(p => ({ ...p, subsidiaries: (p.subsidiaries || []).map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
+                return (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1fr auto', gap: 6, marginBottom: 6 }}>
+                    <input className="form-input" value={sub.name || ''} onChange={e => upd({ name: e.target.value })} placeholder="ДП «Наш Дім-2»" aria-label="Назва" />
+                    <input className="form-input" value={sub.address || ''} onChange={e => upd({ address: e.target.value })} placeholder="Адреса" aria-label="Адреса" />
+                    <input className="form-input" value={sub.phone || ''} onChange={e => upd({ phone: e.target.value })} placeholder="Телефон диспетчера" aria-label="Телефон" />
+                    <button type="button" className="btn btn-ghost btn-sm" aria-label="Прибрати" onClick={() => setScForm(p => ({ ...p, subsidiaries: (p.subsidiaries || []).filter((_, j) => j !== i) }))}>×</button>
+                  </div>
+                );
+              })}
+              <button type="button" className="btn btn-ghost btn-sm" style={{ width: 'fit-content' }} onClick={() => setScForm(p => ({ ...p, subsidiaries: [...(p.subsidiaries || []), { name: '', address: '', phone: '' }] }))}>+ Додати підприємство</button>
+              <span className="form-hint">Кількість будинків рахується сама — за полем «ДП» у будинках (назва має містити, наприклад, «Наш Дім-2»).</span>
             </div>
             <button className="btn btn-primary btn-sm" type="submit" disabled={scSaving} style={{ width: 'fit-content' }}>
               {scSaving ? 'Збереження...' : 'Зберегти'}

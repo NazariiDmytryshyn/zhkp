@@ -6,6 +6,7 @@ dist/
 
 # Production database (has real data on server)
 server/data.json
+server/data.json*.tmp
 
 # Uploaded files
 server/uploads/
@@ -28,3 +29,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Інструкції для Claude (локальні)
+CLAUDE.md

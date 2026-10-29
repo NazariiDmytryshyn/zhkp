@@ -32,7 +32,9 @@ async function request(path, options = {}) {
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data?.error || 'Помилка API');
+    const error = new Error(data?.error || 'Помилка API');
+    error.details = data?.details;
+    throw error;
   }
   return data;
 }
@@ -96,6 +98,12 @@ export async function addGalleryPhoto(payload, token) {
   return result;
 }
 
+export async function updateGalleryPhoto(id, payload, token) {
+  const result = await request(`/admin/gallery/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
 export async function deleteGalleryPhoto(id, token) {
   const result = await request(`/admin/gallery/${id}`, { method: 'DELETE', token });
   window.dispatchEvent(new Event('zhkp-data-updated'));
@@ -146,6 +154,12 @@ export async function addService(payload, token) {
 
 export async function updateService(id, payload, token) {
   const result = await request(`/admin/services/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+export async function importServices(items, token) {
+  const result = await request('/admin/services/import', { method: 'POST', body: { items }, token });
   window.dispatchEvent(new Event('zhkp-data-updated'));
   return result;
 }
@@ -232,6 +246,67 @@ export async function uploadDocument(file, name, token) {
 }
 export async function deleteDocument(id, token) {
   const result = await request(`/admin/documents/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+/* ── Buildings & tariffs ── */
+export async function getBuildings() {
+  const result = await request('/buildings');
+  return result.buildings;
+}
+export async function addBuilding(payload, token) {
+  const result = await request('/admin/buildings', { method: 'POST', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result.building;
+}
+export async function updateBuilding(id, payload, token) {
+  const result = await request(`/admin/buildings/${id}`, { method: 'PUT', body: payload, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result.building;
+}
+export async function deleteBuilding(id, token) {
+  const result = await request(`/admin/buildings/${id}`, { method: 'DELETE', token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+export async function importBuildings(items, token) {
+  const result = await request('/admin/buildings/import', { method: 'POST', body: { items }, token });
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+/* ── Звіти будинків ── */
+async function sendForm(path, formData, token) {
+  const response = await fetch(`/api${path}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: formData });
+  let data = null;
+  try { data = await response.json(); } catch { /* nginx віддає HTML на завеликі файли */ }
+  if (!response.ok) {
+    if (response.status === 413) throw new Error('Файл завеликий для сервера (понад 15 МБ)');
+    throw new Error(data?.error || `Помилка завантаження (${response.status})`);
+  }
+  return data;
+}
+
+export async function uploadBuildingReport(id, file, year, token) {
+  const fd = new FormData();
+  fd.append('year', String(year));
+  fd.append('file', file);
+  const result = await sendForm(`/admin/buildings/${id}/reports`, fd, token);
+  window.dispatchEvent(new Event('zhkp-data-updated'));
+  return result;
+}
+
+// Один файл за запит — щоб не впертися в ліміт розміру запиту на сервері
+export async function bulkUploadReport(file, year, token) {
+  const fd = new FormData();
+  fd.append('year', String(year));
+  fd.append('files', file);
+  return sendForm('/admin/buildings/reports/bulk', fd, token);
+}
+
+export async function deleteBuildingReport(id, reportId, token) {
+  const result = await request(`/admin/buildings/${id}/reports/${reportId}`, { method: 'DELETE', token });
   window.dispatchEvent(new Event('zhkp-data-updated'));
   return result;
 }

@@ -1,4 +1,6 @@
 import { Helmet } from 'react-helmet-async';
+import Icon from '../components/Icon.jsx';
+import { fmtDateShort } from '../lib/buildings.js';
 
 function formatSize(bytes) {
   if (!bytes) return '';
@@ -7,65 +9,38 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
 }
 
-function formatDate(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+const ext = (url = '') => url.split('.').pop().toUpperCase().slice(0, 4);
 
-function fileExt(url) {
-  return (url || '').split('.').pop().toUpperCase().slice(0, 4);
-}
-
-const extColors = { PDF: 'red', DOC: 'blue', DOCX: 'blue', XLS: 'green', XLSX: 'green' };
-
-const DownloadIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-);
-
-function Documents({ documents }) {
-  if (!documents || documents.length === 0) return null;
-
+function Documents({ documents = [] }) {
+  const docs = [...documents].sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
   return (
-    <section className="page page-documents">
+    <>
       <Helmet>
         <title>Документи — ПП «Наш Дім» Тернопіль</title>
-        <meta name="description" content="Нормативні та інформаційні документи ПП «Наш Дім» Тернопіль для завантаження." />
+        <meta name="description" content="Рішення про тарифи, звіти, договори та інші документи ПП «Наш Дім» Тернопіль." />
         <link rel="canonical" href="https://nash-dim.ink/documents" />
       </Helmet>
-      <div className="section-header">
-        <div><h2>Документи</h2><p>Нормативні та інформаційні документи підприємства</p></div>
-      </div>
 
-      <div className="documents-list">
-        {documents.map(doc => {
-          const ext = fileExt(doc.url);
-          const color = extColors[ext] || 'blue';
-          return (
-            <a
-              key={doc.id}
-              className="document-item"
-              href={doc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-            >
-              <div className={`document-ext document-ext-${color}`}>{ext}</div>
-              <div className="document-info">
-                <div className="document-name">{doc.name}</div>
-                <div className="document-meta">
-                  {doc.uploadedAt && <span>{formatDate(doc.uploadedAt)}</span>}
-                  {doc.size ? <span>{formatSize(doc.size)}</span> : null}
-                </div>
-              </div>
-              <div className="document-download"><DownloadIcon /></div>
+      <h1 className="t-h1">Документи</h1>
+      <p className="t-lead" style={{ marginTop: 8 }}>Рішення про тарифи, звіти, договори.</p>
+
+      {docs.length === 0 ? (
+        <div className="panel empty" style={{ marginTop: 32 }}><p>Документів поки немає</p></div>
+      ) : (
+        <div className="card-box" style={{ marginTop: 32, maxWidth: 880 }}>
+          {docs.map((d) => (
+            <a key={d.id} className="doc" href={d.url} target="_blank" rel="noopener noreferrer">
+              <span className="nd-tile"><Icon name="file" /></span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 500, overflowWrap: 'anywhere' }}>{d.name}</span>
+                <span className="t-small">{[ext(d.url), d.uploadedAt && fmtDateShort(d.uploadedAt), formatSize(d.size)].filter(Boolean).join(' · ')}</span>
+              </span>
+              <Icon name="download" style={{ color: 'var(--brand)' }} />
             </a>
-          );
-        })}
-      </div>
-    </section>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 

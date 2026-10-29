@@ -1,77 +1,59 @@
 import { Helmet } from 'react-helmet-async';
+import Icon from '../components/Icon.jsx';
+import { sitePhones, telHref } from '../components/SiteLayout.jsx';
 
-const PhoneIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.64 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/>
-  </svg>
-);
-const ClockIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
+const CITY = [['101', 'Пожежна'], ['102', 'Поліція'], ['103', 'Швидка'], ['104', 'Газова служба']];
 
-const COLORS = ['blue', 'amber', 'green', 'purple', 'cyan', 'red'];
-
-function Emergency({ emergencyContacts }) {
-  if (!emergencyContacts || emergencyContacts.length === 0) {
-    return (
-      <section className="page page-emergency">
-        <Helmet>
-          <title>Аварійна служба — ПП «Наш Дім» Тернопіль</title>
-          <meta name="description" content="Телефони аварійних служб ПП «Наш Дім» Тернопіль." />
-        </Helmet>
-        <div className="section-header">
-          <div><h2>Аварійна</h2><p>Телефони екстреної та аварійної служб</p></div>
-        </div>
-        <div className="content-block" style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ color: 'var(--slate-500)' }}>Контакти будуть додані найближчим часом</p>
-        </div>
-      </section>
-    );
-  }
-
+function Emergency({ emergencyContacts = [], siteContent = {} }) {
+  const { sos } = sitePhones(siteContent);
   return (
-    <section className="page page-emergency">
+    <>
       <Helmet>
         <title>Аварійна служба — ПП «Наш Дім» Тернопіль</title>
-        <meta name="description" content="Телефони аварійних та екстрених служб ПП «Наш Дім» Тернопіль. Швидкий зв'язок при аваріях водопостачання, електрики, опалення." />
+        <meta name="description" content="Телефони аварійних служб ПП «Наш Дім» Тернопіль: сантехніка, електрика, газ. Цілодобово." />
         <link rel="canonical" href="https://nash-dim.ink/emergency" />
       </Helmet>
-      <div className="section-header">
-        <div>
-          <h2>Аварійна</h2>
-          <p>Телефони служб екстреної допомоги та аварійного реагування</p>
+
+      <h1 className="t-h1">Аварійна служба</h1>
+      <p className="t-lead" style={{ marginTop: 8 }}>Затоплення, немає світла чи води, запах газу — телефонуйте одразу.</p>
+
+      <a className="nd-notice nd-notice--danger" href={telHref(sos)} style={{ marginTop: 24, alignItems: 'center' }}>
+        <span className="nd-notice__ico"><Icon name="phone" /></span>
+        <div className="nd-notice__body">
+          <p className="nd-notice__title">Аварійна 24/7</p>
+          <p className="sos-card__phone" style={{ color: 'var(--danger-ink)' }}>{sos}</p>
         </div>
-      </div>
+        <span className="nd-btn nd-btn--danger nd-btn--sm">Подзвонити</span>
+      </a>
 
-      <div className="emergency-grid">
-        {emergencyContacts.map((c, i) => (
-          <div key={c.id} className={`emergency-card emergency-card-${COLORS[i % COLORS.length]}`}>
-            <div className="emergency-card-icon">
-              <PhoneIcon />
+      {emergencyContacts.length > 0 && (
+        <div className="g2" style={{ marginTop: 24 }}>
+          {emergencyContacts.map((c) => (
+            <div className="panel sos-card" key={c.id}>
+              <span className="nd-tile" style={{ width: 44, height: 44 }}><Icon name="phone" /></span>
+              <div style={{ minWidth: 0 }}>
+                <p className="t-h3">{c.name}</p>
+                <a className="sos-card__phone" href={telHref(c.phone)}>{c.phone}</a>
+                {c.description && <p className="ink-2" style={{ marginTop: 4 }}>{c.description}</p>}
+                {c.available && <p className="t-small" style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6 }}><Icon name="clock" size="sm" />{c.available}</p>}
+              </div>
             </div>
-            <div className="emergency-card-body">
-              <div className="emergency-card-name">{c.name}</div>
-              <a className="emergency-card-phone" href={`tel:${c.phone.replace(/\s/g, '')}`}>
-                {c.phone}
-              </a>
-              {c.description && <p className="emergency-card-desc">{c.description}</p>}
-              {c.available && (
-                <div className="emergency-card-hours">
-                  <ClockIcon />{c.available}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div className="content-block emergency-note">
-        <strong>У разі загрози життю</strong> — негайно телефонуйте <strong>101</strong> (пожежна),{' '}
-        <strong>102</strong> (поліція), <strong>103</strong> (швидка), <strong>104</strong> (газ).
-      </div>
-    </section>
+      <section className="sec">
+        <h2 className="t-h2" style={{ marginBottom: 16 }}>Якщо є загроза життю</h2>
+        <div className="g4">
+          {CITY.map(([n, label]) => (
+            <a key={n} className="panel" href={`tel:${n}`} style={{ textDecoration: 'none', color: 'var(--ink)' }}>
+              <p className="t-num" style={{ font: '800 32px/36px var(--font-display)', color: 'var(--danger)' }}>{n}</p>
+              <p className="ink-2" style={{ marginTop: 4 }}>{label}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    </>
   );
 }
 
