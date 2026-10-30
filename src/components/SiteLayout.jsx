@@ -38,6 +38,16 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
 
+  // Відкрите мобільне меню займає весь екран — сторінку під ним не прокручуємо
+  useEffect(() => {
+    if (!open) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+  }, [open]);
+
   const current = (to) => (location.pathname === to || location.pathname.startsWith(`${to}/`) ? 'page' : undefined);
   const link = (i) => <Link key={i.to} to={i.to} aria-current={current(i.to)}>{i.label}</Link>;
 
@@ -54,7 +64,7 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
           {siteContent.address && <span className="nd-topbar__addr">{siteContent.address}</span>}
         </div>
       </div>
-      <header className="nd-header">
+      <header className={`nd-header${open ? ' is-open' : ''}`}>
         <div className="nd-header__in wrap">
           <Link className="nd-logo" to="/">
             <span className="nd-logo__mark"><Icon name="home" size="lg" /></span>
@@ -89,7 +99,14 @@ export function SiteHeader({ siteContent = {}, sections = {}, documents = [], bu
           <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined}>Головна</Link>
           {items.map(link)}
           {mine && <Link to={`/tariffs/${mine.id}`}>Мій будинок: {shortAddr(mine)}</Link>}
-          {sections.request !== false && <Link className="nd-btn nd-btn--primary" to="/request">Залишити заявку</Link>}
+          <div className="nd-mnav__acts">
+            {sos && (
+              <a className="nd-btn nd-btn--secondary nd-mnav__sos" href={telHref(sos)}>
+                <Icon name="phone" /> Аварійна: {sos}
+              </a>
+            )}
+            {sections.request !== false && <Link className="nd-btn nd-btn--primary" to="/request">Залишити заявку</Link>}
+          </div>
         </nav>
       </header>
     </>

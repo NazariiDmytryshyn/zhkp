@@ -388,11 +388,17 @@
   .nd-footer__grid { grid-template-columns: 1fr 1fr; }
   .nd-nav, .nd-header__acts { display: none; }
   .nd-burger { display: grid; }
-  .nd-mnav { display: flex; flex-direction: column; gap: 4px; padding: 8px 16px 16px; border-top: 1px solid var(--line); background: var(--surface); }
+  /* Відкрите меню — на весь екран поверх сторінки (і поверх кнопки заявки) */
+  .nd-header.is-open { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; border-bottom: 0; }
+  .nd-header.is-open .nd-header__in { flex: none; border-bottom: 1px solid var(--line); }
+  .nd-mnav { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--surface); flex: 1; overflow-y: auto; }
   .nd-mnav[hidden] { display: none; }
-  .pg .nd-mnav a { padding: 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--ink); font-weight: 500; }
+  .pg .nd-mnav a { padding: 14px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--ink); font-weight: 500; font-size: 18px; }
   .pg .nd-mnav a[aria-current="page"] { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
-  .nd-mnav .nd-btn { margin-top: 8px; }
+  .nd-mnav__acts { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .pg .nd-mnav a.nd-btn { font-size: 16px; justify-content: center; padding: 0 16px; }
+  .pg .nd-mnav a.nd-mnav__sos, .pg .nd-mnav a.nd-mnav__sos:hover { color: var(--danger-ink); border-color: var(--danger); background: var(--danger-soft); }
+  .pg .nd-mnav a.nd-btn--primary, .pg .nd-mnav a.nd-btn--primary:hover { color: var(--on-brand); background: var(--brand); }
 }
 @media (max-width: 900px) {
   .bl-head { display: none; }
